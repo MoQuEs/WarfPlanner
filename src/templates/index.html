@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1, maximum-scale=1">
+
+    <title>{{ i18t('Title') }}</title>
+
+    <script src="/static/js/libs/jquery.min.js"></script>
+    <script src="/static/js/libs/popperjs.min.js"></script>
+    <script src="/static/js/libs/tippy.min.js"></script>
+    <script src="/static/js/libs/htmx.min.js"></script>
+    <script src="/static/js/libs/tailwind.min.js"></script>
+    <script src="/static/js/libs/flowbite.min.js"></script>
+    <script src="/static/js/index.js"></script>
+
+    <link rel="stylesheet" href="/static/css/libs/bootstrap-icons.min.css"/>
+    <link rel="stylesheet" href="/static/css/libs/tippy.min.css"/>
+    <link rel="stylesheet" href="/static/css/libs/flowbite.min.css"/>
+    <link rel="stylesheet" href="/static/css/index.css"/>
+
+    <style type="text/tailwindcss">
+        {{ tailwind_css }}
+    </style>
+</head>
+<body class="bg-slate-200 text-slate-900 dark:bg-slate-900 dark:text-slate-200 h-full max-h-full w-full max-w-full">
+<div class="flex flex-row justify-center gap-x-5 py-5">
+    {% if is_dev %}
+    <button type="button" class="btn-red"
+            hx-get="/reload"
+            hx-on::after-request="location.reload(true);">
+        {{ i18t('button.reload') }}
+    </button>
+    {% endif %}
+    {% if is_dev %}
+    <button type="button" class="btn-light"
+            hx-get="/materials"
+            hx-target="#materials">
+        {{ i18t('button.load_materials') }}
+    </button>
+    {% endif %}
+    <button type="button" class="btn-purple">
+        {{ i18t('button.add_materials') }}
+    </button>
+    {% if is_dev %}
+    <button type="button" class="btn-light"
+            hx-get="/upgrades"
+            hx-target="#upgrades">
+        {{ i18t('button.load_upgrades') }}
+    </button>
+    {% endif %}
+    <button type="button" class="btn-purple">
+        {{ i18t('button.add_character') }}
+    </button>
+</div>
+<div class="grid grid-cols-2">
+    <div id="materials">
+    </div>
+    <div id="upgrades">
+    </div>
+</div>
+<script src="/static/js/events.js"></script>
+</body>
+</html>

@@ -1,0 +1,30 @@
+{
+  "texts": {
+    "en_US": {
+      "title": "WarfPlanner",
+      "button": {
+        "reload": "Reload",
+        "load_materials": "Load materials",
+        "add_upgrade": "Add upgrade"
+      },
+      "materials": {
+        "main": "Main",
+        "module": "Module",
+        "exp": "Exp cards",
+        "skill": "Skill books",
+        "orirock": "Orirock",
+        "sugar": "Sugar",
+        "polyester": "Polyester",
+        "oriron": "Oriron",
+        "keton": "Keton",
+        "device": "Device"
+      }
+    },
+    "ja_JP": {
+    },
+    "ko_KR": {
+    },
+    "zh_CN": {
+    }
+  }
+}

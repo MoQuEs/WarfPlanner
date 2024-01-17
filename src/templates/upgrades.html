@@ -1,0 +1,34 @@
+<div class="flex flex-col flex-nowrap gap-y-8">
+    {% for upgrade_character in upgrades_characters %}
+    <div class="flex flex-col flex-nowrap gap-y-8">
+        <form action="">
+            <div class="flex flex-row gap-5">
+                <div class="relative max-w-32 max-h-32">
+                    <img src="/static/images/avatars/{{ upgrade_character.character.id }}.png"
+                         title="{{ upgrade_character.character.get_name(language) }}"
+                         alt="{{ upgrade_character.character.get_name(language) }}"
+                         class="w-auto h-auto"
+                         data-tippy="{{ upgrade_character.character.get_name(language) }}"
+                         data-tippy-content="{{ upgrade_character.character.get_name(language) }}"
+                    >
+                </div>
+                <div>
+                    FORM
+                </div>
+            </div>
+        </form>
+        <div class="flex flex-row flex-wrap gap-0.5">
+            {% for material_id, material_count in upgrade_character.materials.items() %}
+            <div class="relative max-w-20 max-h-20">
+                <img src="/static/images/materials/{{ material_id }}.png"
+                     class="w-auto h-auto"
+                >
+                <div class="absolute top-3 right-0 opacity-80 bg-slate-800 py-0.5 px-2 font-bold">
+                    {{ material_count }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
