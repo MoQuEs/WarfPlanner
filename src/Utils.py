@@ -39,7 +39,7 @@ def is_dir(path: str):
 
 
 def mkdir_from_file(path: str):
-    os.makedirs(dirname(path), exist_ok=True)
+    os.makedirs(dir_name(path), exist_ok=True)
 
 
 def pwd_dir(*paths: [str | int]) -> str:
@@ -54,7 +54,7 @@ def basename(path: str) -> str:
     return os.path.basename(path)
 
 
-def dirname(path: str) -> str:
+def dir_name(path: str) -> str:
     return os.path.dirname(path)
 
 
@@ -160,10 +160,6 @@ def testing_dir(*paths: [str]) -> str:
 
 def testing_images_dir(*paths: [str]) -> str:
     return testing_dir("images", *paths)
-
-
-def models_dir(*paths: [str]) -> str:
-    return data_join("models", *paths)
 
 
 def get_file_content(path: str) -> str:
