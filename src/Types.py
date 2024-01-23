@@ -1,15 +1,19 @@
 from abc import abstractmethod
 from dataclasses import dataclass, field
+from os.path import exists
+from typing import Optional
 
 from marshmallow_dataclass import class_schema
 
 from Utils import (
     get_json_file_content,
     put_json_file_content,
-    arknights_data_file,
-    saved_data_file,
-    language_data_file,
+    arknights_file,
+    save_file,
+    language_file,
     clamp,
+    remove_duplicate,
+    map_object
 )
 
 
@@ -29,9 +33,9 @@ class Rarity:
     def from_game_data(rarity: str | int) -> int:
         for rarity_id, rarity_icon_id, rarity_name in Rarity.all_as_tuple():
             if (
-                rarity_icon_id == str(rarity)
-                or rarity_name == str(rarity)
-                or (isinstance(rarity, int) and rarity_id == rarity)
+                    rarity_icon_id == str(rarity)
+                    or rarity_name == str(rarity)
+                    or (isinstance(rarity, int) and rarity_id == rarity)
             ):
                 return rarity_id
 
@@ -43,15 +47,20 @@ class Upgrade:
     def from_game_data(value: dict) -> dict[str, int]:
         cost = {}
 
+        def add_cost(mid: str, count: int):
+            if mid not in cost:
+                cost[mid] = 0
+            cost[mid] += count
+
         if isinstance(value, dict):
             for key in ["lvlUpCost", "levelUpCost", "itemCost", "evolveCost"]:
                 if key in value:
                     for value_cost in value[key] if value[key] is not None else []:
-                        cost[str(value_cost["id"])] = int(value_cost["count"])
+                        add_cost(str(value_cost["id"]), int(value_cost["count"]))
 
         if isinstance(value, list):
             for value_cost in value:
-                cost[str(value_cost["id"])] = int(value_cost["count"])
+                add_cost(str(value_cost["id"]), int(value_cost["count"]))
 
         return cost
 
@@ -119,6 +128,7 @@ class CharacterUpgrades:
 
 @dataclass
 class Character:
+    id: str = field(default_factory=str)
     name: dict[str, str] = field(default_factory=dict)
     rarity: int = field(default_factory=int)
     elite: list[dict[str, int]] = field(default_factory=list)
@@ -127,8 +137,9 @@ class Character:
     modules: dict[str, Module] = field(default_factory=dict)
 
     @staticmethod
-    def from_game_data(lang_id: str, value: dict) -> "Character":
+    def from_game_data(lang_id: str, cid: str, value: dict) -> "Character":
         self = Character()
+        self.id = cid
         self.name = {lang_id: value["name"]}
         self.rarity = Rarity.from_game_data(value["rarity"])
 
@@ -153,122 +164,106 @@ class Character:
 
         return list(self.name.values())[0]
 
-    def get_materials_for_upgrade(
-        self, data: "Data", upgrades: CharacterUpgrades
-    ) -> dict[str, int]:
+    def get_materials_for_upgrade(self, data: "Arknights", upgrades: CharacterUpgrades) -> dict[str, int]:
         materials = {}
 
-        max_lvs = data.upgrade_max_lv_phases.phases[self.rarity]
-        gold_costs = data.upgrade_gold_cost.phases[self.rarity]
+        def add_upgrade_material(m: str, c: int):
+            print('add', m, c)
+            if m not in materials:
+                materials[m] = 0
 
-        lmd = 0
-        exp = 0
+            materials[m] += c
+
+        def add_upgrade_materials(upgrade: dict[str, int]):
+            for m, c in upgrade.items():
+                add_upgrade_material(m, c)
+
+        all_gold = 0
+        all_exp = 0
 
         if upgrades.level.enabled:
+            elite_max_lvs = data.upgrade_max_lv_phases.phases[self.rarity]
+            elite_gold_costs = data.upgrade_gold_cost.phases[self.rarity]
+
             for elite, elite_upgrade in enumerate(self.elite):
                 if upgrades.level.elite_from <= elite <= upgrades.level.elite_to:
-                    for material, cost in elite_upgrade.items():
-                        if material not in materials:
-                            materials[material] = 0
+                    if upgrades.level.elite_from != upgrades.level.elite_to:
+                        add_upgrade_materials(elite_upgrade)
 
-                        materials[material] += cost
+                        if elite > 0 and elite - 1 < len(elite_gold_costs) and elite != upgrades.level.elite_from:
+                            all_gold += elite_gold_costs[elite - 1]
+                            pass
 
-                    if elite - 1 > 0:
-                        lmd += (
-                            gold_costs[elite - 1] if elite - 1 < len(gold_costs) else 0
-                        )
+                    gold_map = data.upgrade_gold_map.map[elite]
+                    exp_map = data.upgrade_exp_map.map[elite]
 
-                    min_c_level = clamp(upgrades.level.level_from, 0, max_lvs[elite])
-                    max_c_level = clamp(upgrades.level.elite_to, 0, max_lvs[elite])
-                    for level in range(
-                        min_c_level if elite == upgrades.level.elite_from else 0,
-                        max_c_level
-                        if elite == upgrades.level.elite_to
-                        else max_lvs[elite],
-                    ):
-                        lmd += data.upgrade_gold_map.map[elite][level]
-                        exp += data.upgrade_exp_map.map[elite][level]
+                    min_level = 1
+                    if upgrades.level.elite_from == elite:
+                        min_level = max(upgrades.level.level_from, 0)
+
+                    max_level = elite_max_lvs[elite]
+                    if upgrades.level.elite_to == elite:
+                        max_level = min(upgrades.level.level_to, elite_max_lvs[elite])
+
+                    for lv in range(min_level, max_level):
+                        lv -= 1
+
+                        gold = gold_map[lv]
+                        exp = exp_map[lv]
+                        if gold > 0:
+                            print('LV %d; LMD %d; EXP %d' % (lv, gold, exp))
+                            all_gold += gold
+                            all_exp += exp
 
         if upgrades.all_skil_lvlup.enabled:
             for level, level_upgrade in enumerate(self.all_skil_lvlup):
-                if (
-                    upgrades.all_skil_lvlup.upgrade_from
-                    <= level
-                    <= upgrades.all_skil_lvlup.upgrade_to
-                ):
-                    for material, cost in level_upgrade.items():
-                        if material not in materials:
-                            materials[material] = 0
-
-                        materials[material] += cost
+                if upgrades.all_skil_lvlup.upgrade_from <= level < upgrades.all_skil_lvlup.upgrade_to:
+                    add_upgrade_materials(level_upgrade)
 
         for skill_id, skill in self.skills.items():
             if skill_id in upgrades.skills:
                 for mastery, mastery_upgrade in enumerate(skill.mastery):
-                    if (
-                        upgrades.skills[skill_id].enabled
-                        and upgrades.skills[skill_id].upgrade_from
-                        <= mastery
-                        <= upgrades.skills[skill_id].upgrade_to
-                    ):
-                        for material, cost in mastery_upgrade.items():
-                            if material not in materials:
-                                materials[material] = 0
-
-                            materials[material] += cost
+                    upgrade_skill = upgrades.skills[skill_id]
+                    if upgrade_skill.enabled and upgrade_skill.upgrade_from <= mastery < upgrade_skill.upgrade_to:
+                        add_upgrade_materials(mastery_upgrade)
 
         for module_id, module in self.modules.items():
             if module_id in upgrades.modules:
                 for mastery, module_upgrade in enumerate(module.mastery):
-                    if (
-                        upgrades.modules[module_id].enabled
-                        and upgrades.modules[module_id].upgrade_from
-                        <= mastery
-                        <= upgrades.modules[module_id].upgrade_to
-                    ):
-                        for material, cost in module_upgrade.items():
-                            if material not in materials:
-                                materials[material] = 0
+                    upgrade_module = upgrades.modules[module_id]
+                    if upgrade_module.enabled and upgrade_module.upgrade_from <= mastery < upgrade_module.upgrade_to:
+                        add_upgrade_materials(module_upgrade)
 
-                            materials[material] += cost
+        if all_gold > 0 or data.static_names["LMD"] in materials:
+            add_upgrade_material(data.static_names["LMD"], all_gold)
 
-        if lmd > 0 or data.static_names["LMD"] in materials:
-            if data.static_names["LMD"] not in materials:
-                materials[data.static_names["LMD"]] = 0
-            materials[data.static_names["LMD"]] += lmd
-
-        if exp > 0 or data.static_names["EXP"] in materials:
-            if data.static_names["EXP"] not in materials:
-                materials[data.static_names["EXP"]] = 0
-            materials[data.static_names["EXP"]] += exp
+        if all_exp > 0 or data.static_names["EXP"] in materials:
+            add_upgrade_material(data.static_names["EXP"], all_exp)
 
         if data.static_names["EXP"] not in materials:
             pass
 
-        for dual_chip in data.dual_chips:
-            if dual_chip in materials:
-                if data.static_names["CHIPS_CATALYST"] not in materials:
-                    materials[data.static_names["CHIPS_CATALYST"]] = 0
-
-                if data.static_names["RED_CERTS"] not in materials:
-                    materials[data.static_names["RED_CERTS"]] = 0
-
-                materials[data.static_names["CHIPS_CATALYST"]] += materials[dual_chip]
-                materials[data.static_names["RED_CERTS"]] += materials[dual_chip] * 90
+        for mat, needs in data.needs_additional_mats.items():
+            if mat in materials:
+                add_upgrade_materials(needs)
 
         return materials
 
 
 @dataclass
 class Material:
+    id: str = field(default_factory=str)
     name: dict[str, str] = field(default_factory=dict)
     rarity: int = field(default_factory=int)
+    craft_from: Optional[dict[str, int]] = field(default=None)
 
     @staticmethod
-    def from_game_data(lang_id: str, value: dict) -> "Material":
+    def from_game_data(lang_id: str, mid: str, value: dict, craft_from: None | dict[str, int]) -> "Material":
         self = Material()
+        self.id = mid
         self.name = {lang_id: value["name"]}
         self.rarity = Rarity.from_game_data(value["rarity"])
+        self.craft_from = craft_from
 
         return self
 
@@ -345,11 +340,7 @@ class SaveLoad:
         pass
 
     def reload(self):
-        new = self.load()
-
-        for key, value in self.__class__.__dict__.items():
-            if not key.startswith("__"):
-                setattr(self, key, getattr(new, key))
+        map_object(self, self.load())
 
     @abstractmethod
     def save(self):
@@ -357,10 +348,10 @@ class SaveLoad:
 
 
 @dataclass
-class Data(SaveLoad):
-    character: dict[str, Character] = field(default_factory=dict)
+class Arknights(SaveLoad):
+    characters: dict[str, Character] = field(default_factory=dict)
 
-    material: dict[str, Material] = field(default_factory=dict)
+    materials: dict[str, Material] = field(default_factory=dict)
 
     exp: dict[str, int] = field(default_factory=dict)
 
@@ -372,45 +363,52 @@ class Data(SaveLoad):
     upgrade_gold_map: UpgradeGoldMap = field(default_factory=UpgradeGoldMap)
 
     static_names: dict[str, str] = field(default_factory=dict)
-    exp_mats: list[str] = field(default_factory=list)
-    dual_chips: list[str] = field(default_factory=list)
+    needs_additional_mats: dict[str, dict[str, int]] = field(default_factory=dict)
     display_materials: list[dict[str, list[str]]] = field(default_factory=list)
 
     @staticmethod
-    def load() -> "Data":
-        return Data.from_file(Data, arknights_data_file())
+    def load() -> "Arknights":
+        return Arknights.from_file(Arknights, arknights_file())
 
     def save(self):
-        self.to_file(Data, arknights_data_file())
+        self.to_file(Arknights, arknights_file())
 
     def add_character(self, character_id: str, lang_id: str, character: Character):
-        if character_id not in self.character:
-            self.character[character_id] = character
+        if character_id not in self.characters:
+            self.characters[character_id] = character
         else:
-            self.character[character_id].name[lang_id] = character.name[lang_id]
+            self.characters[character_id].name[lang_id] = character.name[lang_id]
 
     def add_material(self, material_id: str, lang_id: str, material: Material):
-        if material_id not in self.material:
-            self.material[material_id] = material
+        if material_id not in self.materials:
+            self.materials[material_id] = material
         else:
-            self.material[material_id].name[lang_id] = material.name[lang_id]
+            self.materials[material_id].name[lang_id] = material.name[lang_id]
 
     def get_material(self, mid: str) -> Material:
-        for material_id, material in self.material.items():
+        for material_id, material in self.materials.items():
             if mid == material_id:
                 return material
 
         raise Exception("Unknown material with id %s" % mid)
 
+    def get_material_id_by_model_class(self, mmc: str) -> str:
+        for material_id, material in self.materials.items():
+            for name in material.name.values():
+                if mmc.lower() == remove_duplicate(name.replace(" ", "-")).lower():
+                    return material_id
+
+        raise Exception("Unknown material with id %s" % mmc)
+
     def get_character(self, cid: str) -> Character:
-        for character_id, character in self.character.items():
+        for character_id, character in self.characters.items():
             if cid == character_id:
                 return character
 
         raise Exception("Unknown character with id %s" % cid)
 
     def get_materials_to_upgrade(
-        self, characters: dict[str, CharacterUpgrades]
+            self, characters: dict[str, CharacterUpgrades]
     ) -> dict[str, dict[str, int]]:
         upgrades = {
             "all": {},
@@ -432,29 +430,31 @@ class Data(SaveLoad):
 
 
 @dataclass
-class SavedData(SaveLoad):
+class Save(SaveLoad):
     materials: dict[str, int] = field(default_factory=dict)
     upgrades: dict[str, CharacterUpgrades] = field(default_factory=dict)
 
     @staticmethod
-    def load() -> "SavedData":
-        return SavedData.from_file(SavedData, saved_data_file())
+    def load() -> "Save":
+        if not exists(language_file()):
+            Language().save()
+        return Save.from_file(Save, save_file())
 
     def save(self):
-        self.to_file(SavedData, saved_data_file())
+        self.to_file(Save, save_file())
 
 
 @dataclass
-class LanguageData(SaveLoad):
+class Language(SaveLoad):
     language: str = "en_US"
     texts: dict[str, dict] = field(default_factory=dict)
 
     @staticmethod
-    def load() -> "LanguageData":
-        return LanguageData.from_file(LanguageData, language_data_file())
+    def load() -> "Language":
+        return Language.from_file(Language, language_file())
 
     def save(self):
-        self.to_file(LanguageData, language_data_file())
+        self.to_file(Language, language_file())
 
     def get_text(self, key: str) -> str:
         return self.__get_text(self.language, key)

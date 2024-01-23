@@ -54,3 +54,7 @@ Python scripts:
     - images:
         - [yuanyan3060/ArknightsGameResource](https://github.com/yuanyan3060/ArknightsGameResource)
         - [Aceship/Arknight-Images](https://github.com/Aceship/Arknight-Images)
+- Random images:
+  - [https://picsum.photos](https://picsum.photos)
+  - [https://source.unsplash.com](https://source.unsplash.com)
+  - [https://loremflickr.com](https://loremflickr.com)

@@ -1,14 +1,16 @@
+from os import getenv
+
 from dotenv import load_dotenv
 from roboflow import Roboflow
 
-from Utils import env, runs_dir
+from Utils import runs_dir
 
 load_dotenv()
 
 
-rf = Roboflow(api_key=env("ROBOFLOW.API_KEY"))
-workspace = rf.workspace(env("ROBOFLOW.WORKSPACE"))
-project = workspace.project(env("ROBOFLOW.PROJECT"))
+rf = Roboflow(api_key=getenv("ROBOFLOW.API_KEY"))
+workspace = rf.workspace(getenv("ROBOFLOW.WORKSPACE"))
+project = workspace.project(getenv("ROBOFLOW.PROJECT"))
 version = project.version(8)
 
 version.deploy(

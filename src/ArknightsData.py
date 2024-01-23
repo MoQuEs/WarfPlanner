@@ -1,23 +1,24 @@
-import glob
-import re
+import pprint
+from glob import glob
+from os import getenv
+from os.path import join
+from re import match
 
 from dotenv import load_dotenv
 
 from Types import (
-    Data,
+    Arknights,
     Module,
     Material,
     UpgradeGoldMap,
     UpgradeExpMap,
     UpgradeGoldCost,
     UpgradeMaxLvPhases,
-    Character,
+    Character, Upgrade,
 )
 from Utils import (
     download_file,
     arknights_dir,
-    env,
-    join,
     download_file_pool,
     get_json_file_content,
     modules_dir,
@@ -36,169 +37,82 @@ for repository, lang in [
     ("ArknightsGameData_YoStar", "ko_KR"),
 ]:
     for file in [
+        # Guard Amiya
         "char_patch_table.json",
+        # Characters
         "character_table.json",
+        # Skills
         "skill_table.json",
+        # Modules
         "uniequip_table.json",
+        # Materials
         "item_table.json",
+        # Upgrade / Leveling
         "gamedata_const.json",
+        # Materials upgrade
+        "building_data.json",
     ]:
         download_file(
             "https://raw.githubusercontent.com/Kengxxiao/%s/master/%s/gamedata/excel/%s"
             % (repository, lang, file),
             arknights_dir("json", lang, file),
-            force=env("ARKNIGHTS.FORCE_DOWNLOAD_DATA", False),
+            force=getenv("ARKNIGHTS.FORCE_DOWNLOAD_DATA", False),
         )
 
 download_file_pool.join()
 
 print("Generating Arknights data...")
 
-data = Data()
+arknights = Arknights()
 excel_glob_path = arknights_dir("json", "**")
 not_obtainable_exemption = ["char_512_aprot"]
 
 
-# Skills
-skills = {}
-for path in glob.glob(join(excel_glob_path, "skill_table.json")):
-    lang = re.match(r".*[\\\/]+([^\\\/]+)[\\\/]+skill_table.*", path).group(1)
-
-    print("Processing %s %s" % (path, lang))
-    full_json = get_json_file_content(path)
-    for key, value in full_json.items():
-        name = value["levels"][0]["name"]
-
-        if key not in skills:
-            skills[key] = {"name": {}, "icon_id": None}
-
-        skills[key]["name"][lang] = name
-        skills[key]["icon_id"] = value["iconId"]
-
-
-# Modules
-modules = {}
-for path in glob.glob(join(excel_glob_path, "uniequip_table.json")):
-    lang = re.match(r".*[\\\/]+([^\\\/]+)[\\\/]+uniequip_table.*", path).group(1)
-
-    print("Processing %s %s" % (path, lang))
-    full_json = get_json_file_content(path)
-    for key, value in full_json["equipDict"].items():
-        if value["type"] == "INITIAL":
-            continue
-
-        module = Module.from_game_data(lang, value)
-
-        if value["charId"] not in modules:
-            modules[value["charId"]] = {}
-
-        if key not in modules[value["charId"]]:
-            modules[value["charId"]][key] = module
-        else:
-            modules[value["charId"]][key].name[lang] = module.name[lang]
-
-        download_file(
-            "https://raw.githubusercontent.com/Aceship/Arknight-Images/main/equip/icon/%s.png"
-            % module.icon_id,
-            modules_dir("%s.png" % module.icon_id),
-            force=env("ARKNIGHTS.FORCE_DOWNLOAD_IMAGES", False),
-        )
-
-
-# Characters
-for json in ["character_table.json", "char_patch_table.json"]:
-    for path in glob.glob(join(excel_glob_path, "character_table.json")):
-        lang = re.match(r".*[\\\/]+([^\\\/]+)[\\\/]+character_table.*", path).group(1)
-
-        print("Processing %s %s" % (path, lang))
-        full_json = get_json_file_content(path)
-        if "patchChars" in full_json:
-            full_json = full_json["patchChars"]
-
-        for key, value in full_json.items():
-            if (
-                value["isNotObtainable"] is True and key not in not_obtainable_exemption
-            ) or not key.startswith("char_"):
-                continue
-
-            character = Character.from_game_data(lang, value)
-            data.add_character(key, lang, character)
-
-            download_file(
-                "https://raw.githubusercontent.com/yuanyan3060/ArknightsGameResource/main/avatar/%s.png"
-                % key,
-                avatars_dir("%s.png" % key),
-                force=env("ARKNIGHTS.FORCE_DOWNLOAD_IMAGES", False),
-            )
-
-            for skill_id, character_skill in character.skills.items():
-                character_skill.name = skills[skill_id]["name"]
-                if skills[skill_id]["icon_id"] is not None:
-                    character_skill.icon_id = skills[skill_id]["icon_id"]
-
-                download_file(
-                    "https://raw.githubusercontent.com/yuanyan3060/ArknightsGameResource/main/skill/skill_icon_%s.png"
-                    % character_skill.icon_id,
-                    skills_dir("%s.png" % character_skill.icon_id),
-                    force=env("ARKNIGHTS.FORCE_DOWNLOAD_IMAGES", False),
-                )
-
-            if key in modules:
-                character.modules = modules[key]
-
-
-# Items
-for path in glob.glob(join(excel_glob_path, "item_table.json")):
-    lang = re.match(r".*[\\\/]+([^\\\/]+)[\\\/]+item_table.*", path).group(1)
-
-    print("Processing %s %s" % (path, lang))
-    full_json = get_json_file_content(path)
-    for key, value in full_json["items"].items():
-        if not key.isnumeric() and key not in [
-            "mod_unlock_token",
-            "mod_update_token_2",
-            "mod_update_token_1",
-        ]:
-            continue
-
-        data.add_material(key, lang, Material.from_game_data(lang, value))
-
-        download_file(
-            "https://raw.githubusercontent.com/yuanyan3060/ArknightsGameResource/main/item/%s.png"
-            % value["iconId"],
-            materials_dir("%s.png" % key),
-            force=env("ARKNIGHTS.FORCE_DOWNLOAD_IMAGES", False),
-        )
-
-    for key, value in full_json["expItems"].items():
-        if not key.isnumeric():
-            continue
-
-        data.exp[key] = value["gainExp"]
-
-
-# Upgrade
-for path in glob.glob(join(excel_glob_path, "gamedata_const.json")):
-    lang = re.match(r".*[\\\/]+([^\\\/]+)[\\\/]+gamedata_const.*", path).group(1)
-
-    print("Processing %s %s" % (path, lang))
-    full_json = get_json_file_content(path)
-    data.upgrade_max_lv_phases = UpgradeMaxLvPhases.from_game_data(full_json)
-    data.upgrade_gold_cost = UpgradeGoldCost.from_game_data(full_json)
-    data.upgrade_exp_map = UpgradeExpMap.from_game_data(full_json)
-    data.upgrade_gold_map = UpgradeGoldMap.from_game_data(full_json)
-
-
 # Static data
-data.static_names = {
+arknights.static_names = {
     "LMD": "4001",
     "EXP": "5001",
     "CHIPS_CATALYST": "32001",
     "RED_CERTS": "4006",
 }
-data.exp_mats = ["2004", "2003", "2002", "2001"]
-data.dual_chips = ["3213", "3223", "3233", "3243", "3253", "3263", "3273", "3283"]
-data.display_materials = [
+arknights.needs_additional_mats = {
+    "3213": {
+        "32001": 1,
+        "4006": 90
+    },
+    "3223": {
+        "32001": 1,
+        "4006": 90
+    },
+    "3233": {
+        "32001": 1,
+        "4006": 90
+    },
+    "3243": {
+        "32001": 1,
+        "4006": 90
+    },
+    "3253": {
+        "32001": 1,
+        "4006": 90
+    },
+    "3263": {
+        "32001": 1,
+        "4006": 90
+    },
+    "3273": {
+        "32001": 1,
+        "4006": 90
+    },
+    "3283": {
+        "32001": 1,
+        "4006": 90
+    },
+    "mod_unlock_token": {
+        "4006": 120
+    }
+}
+arknights.display_materials = [
     {
         "materials.main": ["4001", "5001", "32001", "4006"],
         "materials.module": [
@@ -248,6 +162,153 @@ data.display_materials = [
 ]
 
 
+# Skills
+skills = {}
+for path in glob(join(excel_glob_path, "skill_table.json")):
+    lang = match(r".*[\\\/]+([^\\\/]+)[\\\/]+skill_table.*", path).group(1)
+
+    print("Processing %s %s" % (path, lang))
+    full_json = get_json_file_content(path)
+    for key, value in full_json.items():
+        name = value["levels"][0]["name"]
+
+        if key not in skills:
+            skills[key] = {"name": {}, "icon_id": None}
+
+        skills[key]["id"] = value["skillId"]
+        skills[key]["name"][lang] = name
+        skills[key]["icon_id"] = value["iconId"]
+
+
+# Modules
+modules = {}
+for path in glob(join(excel_glob_path, "uniequip_table.json")):
+    lang = match(r".*[\\\/]+([^\\\/]+)[\\\/]+uniequip_table.*", path).group(1)
+
+    print("Processing %s %s" % (path, lang))
+    full_json = get_json_file_content(path)
+    for key, value in full_json["equipDict"].items():
+        if value["type"] == "INITIAL":
+            continue
+
+        module = Module.from_game_data(lang, value)
+
+        if value["charId"] not in modules:
+            modules[value["charId"]] = {}
+
+        if key not in modules[value["charId"]]:
+            modules[value["charId"]][key] = module
+        else:
+            modules[value["charId"]][key].name[lang] = module.name[lang]
+
+        download_file(
+            "https://raw.githubusercontent.com/Aceship/Arknight-Images/main/equip/icon/%s.png"
+            % module.icon_id,
+            modules_dir("%s.png" % module.icon_id),
+            force=getenv("ARKNIGHTS.FORCE_DOWNLOAD_IMAGES", False),
+        )
+
+
+# Characters
+for json in ["character_table.json", "char_patch_table.json"]:
+    for path in glob(join(excel_glob_path, "character_table.json")):
+        lang = match(r".*[\\\/]+([^\\\/]+)[\\\/]+character_table.*", path).group(1)
+
+        print("Processing %s %s" % (path, lang))
+        full_json = get_json_file_content(path)
+        if "patchChars" in full_json:
+            full_json = full_json["patchChars"]
+
+        for key, value in full_json.items():
+            if (
+                value["isNotObtainable"] is True and key not in not_obtainable_exemption
+            ) or not key.startswith("char_"):
+                continue
+
+            character = Character.from_game_data(lang, key, value)
+            arknights.add_character(key, lang, character)
+
+            download_file(
+                "https://raw.githubusercontent.com/yuanyan3060/ArknightsGameResource/main/avatar/%s.png"
+                % key,
+                avatars_dir("%s.png" % key),
+                force=getenv("ARKNIGHTS.FORCE_DOWNLOAD_IMAGES", False),
+            )
+
+            for skill_id, character_skill in character.skills.items():
+                character_skill.name = skills[skill_id]["name"]
+                if skills[skill_id]["icon_id"] is not None:
+                    character_skill.icon_id = skills[skill_id]["icon_id"]
+
+                download_file(
+                    "https://raw.githubusercontent.com/yuanyan3060/ArknightsGameResource/main/skill/skill_icon_%s.png"
+                    % character_skill.icon_id,
+                    skills_dir("%s.png" % character_skill.icon_id),
+                    force=getenv("ARKNIGHTS.FORCE_DOWNLOAD_IMAGES", False),
+                )
+
+            if key in modules:
+                character.modules = modules[key]
+
+
+# Materials crafting
+craft = {}
+for path in glob(join(excel_glob_path, "building_data.json")):
+    lang = match(r".*[\\\/]+([^\\\/]+)[\\\/]+building_data.*", path).group(1)
+
+    print("Processing %s %s" % (path, lang))
+    full_json = get_json_file_content(path)
+    for _, value in full_json['workshopFormulas'].items():
+        costs = value['costs']
+        if 'goldCost' in value and value['goldCost'] > 0:
+            costs.append({"id": arknights.static_names['LMD'], "count": value['goldCost']})
+
+        craft[value['itemId']] = Upgrade.from_game_data(costs)
+
+
+# Materials
+for path in glob(join(excel_glob_path, "item_table.json")):
+    lang = match(r".*[\\\/]+([^\\\/]+)[\\\/]+item_table.*", path).group(1)
+
+    print("Processing %s %s" % (path, lang))
+    full_json = get_json_file_content(path)
+    for key, value in full_json["items"].items():
+        if not key.isnumeric() and key not in [
+            "mod_unlock_token",
+            "mod_update_token_2",
+            "mod_update_token_1",
+        ]:
+            continue
+
+        material = Material.from_game_data(lang, key, value, craft[key] if key in craft else None)
+        arknights.add_material(key, lang, material)
+
+        download_file(
+            "https://raw.githubusercontent.com/yuanyan3060/ArknightsGameResource/main/item/%s.png"
+            % value["iconId"],
+            materials_dir("%s.png" % key),
+            force=getenv("ARKNIGHTS.FORCE_DOWNLOAD_IMAGES", False),
+        )
+
+    for key, value in full_json["expItems"].items():
+        if not key.isnumeric():
+            continue
+
+        arknights.exp[key] = value["gainExp"]
+
+
+# Upgrade
+for path in glob(join(excel_glob_path, "gamedata_const.json")):
+    lang = match(r".*[\\\/]+([^\\\/]+)[\\\/]+gamedata_const.*", path).group(1)
+
+    print("Processing %s %s" % (path, lang))
+    full_json = get_json_file_content(path)
+    arknights.upgrade_max_lv_phases = UpgradeMaxLvPhases.from_game_data(full_json)
+    arknights.upgrade_gold_cost = UpgradeGoldCost.from_game_data(full_json)
+    arknights.upgrade_exp_map = UpgradeExpMap.from_game_data(full_json)
+    arknights.upgrade_gold_map = UpgradeGoldMap.from_game_data(full_json)
+
+
 # Item backgrounds
 # for rarity_id, rarity_icon_id, rarity_name in Rarity.all_as_tuple():
 #     download_file(
@@ -259,7 +320,7 @@ data.display_materials = [
 
 
 # Output
-data.save()
+arknights.save()
 
 
 print("Waiting for downloads to complete...")

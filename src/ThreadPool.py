@@ -1,6 +1,5 @@
-import threading
 from queue import Queue, Empty
-from threading import Thread
+from threading import Thread, Event
 
 
 class Worker(Thread):
@@ -8,7 +7,7 @@ class Worker(Thread):
 
     tasks: Queue
     daemon: bool = True
-    done: threading.Event = threading.Event()
+    done: Event = Event()
 
     def __init__(self, tasks: Queue):
         Thread.__init__(self)

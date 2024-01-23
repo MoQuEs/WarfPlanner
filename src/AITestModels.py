@@ -1,18 +1,17 @@
-import glob
-import re
+from glob import glob
+from os.path import exists, basename
+from re import search
 
-import cv2
+from cv2 import imread, imwrite, rectangle, putText, FONT_HERSHEY_SIMPLEX
 from dotenv import load_dotenv
 from ultralytics import YOLO
 
 from Utils import (
     testing_dir,
-    basename,
     runs_dir,
-    mkdir,
     is_between_with_margin,
     testing_images_dir,
-    best_run,
+    best_run, mkdir,
 )
 
 load_dotenv()
@@ -63,12 +62,12 @@ def parse_result(directory: str, result) -> callable:
         if not overlap:
             boxes.append(Box(current_xyxy, class_name))
 
-    img = cv2.imread(result.path)
+    img = imread(result.path)
     for box in boxes:
         add_box_to_image(img, box)
 
     mkdir(testing_dir(directory))
-    cv2.imwrite(testing_dir(directory, basename(result.path)), img)
+    imwrite(testing_dir(directory, basename(result.path)), img)
 
 
 def add_box_to_image(img, box: Box):
@@ -83,29 +82,30 @@ def add_box_to_image(img, box: Box):
 
 
 def cv2__box(img, xyxy, color, thickness):
-    cv2.rectangle(
+    rectangle(
         img, (xyxy.x0, xyxy.y0), (xyxy.x1, xyxy.y1), color=color, thickness=thickness
     )
 
 
 def cv2__put_text__on_box(img, cls, xyxy, index, font_scale, color, thickness):
-    cv2.putText(
+    putText(
         img,
         cls,
         (xyxy.x0, xyxy.y0 + (25 * index) + 10),
-        fontFace=cv2.FONT_HERSHEY_SIMPLEX,
+        fontFace=FONT_HERSHEY_SIMPLEX,
         fontScale=font_scale,
         color=color,
         thickness=thickness,
     )
 
 
-for best in glob.glob(runs_dir("**\\weights\\best.pt")):
-    matched = re.search(r"([^\\\/]+)[\\\/]+weights[\\\/]+best\.pt", best)
+for best in glob(runs_dir("**\\weights\\best.pt")):
+    matched = search(r"([^\\\/]+)[\\\/]+weights[\\\/]+best\.pt", best)
 
     model = YOLO(best_run(matched.group(1)))
     for prediction in model.predict(
-        [image for image in glob.glob(testing_images_dir("*"))],
+        [image for image in glob(testing_images_dir("*"))],
         verbose=False,
     ):
-        parse_result(matched.group(1), prediction)
+        if not exists(matched.group(1)):
+            parse_result(matched.group(1), prediction)

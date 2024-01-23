@@ -2,110 +2,28 @@ from autodistill.detection import CaptionOntology
 from autodistill_yolov8 import YOLOv8Base
 from dotenv import load_dotenv
 
-from Utils import auto_labels_in_dir, auto_labels_out_dir, best_run
+try:
+    from yaml import CLoader as Loader, load
+except ImportError:
+    from yaml import Loader, load
+
+from Utils import auto_labels_in_dir, auto_labels_out_dir, best_run, model_args, clear_auto_labels_out_dir
 
 load_dotenv()
+clear_auto_labels_out_dir()
 
+run = "008__yolov8x_yaml__2024_01_13__08_43_00"
 
-# replace weights_path with the path to your YOLOv8 weights file
+model_args_yaml = load(open(model_args(run), 'r'), Loader=Loader)
+label_data_yaml = load(open(model_args_yaml['data'], 'r'), Loader=Loader)
+
+caption_ontology = {}
+for label in label_data_yaml['names']:
+    caption_ontology[label] = label
+
 base_model = YOLOv8Base(
-    ontology=CaptionOntology(
-        {
-            "Aketon": "Aketon",
-            "Bipolar-Nanoflake": "Bipolar-Nanoflake",
-            "Caster-Chip": "Caster-Chip",
-            "Caster-Chip-Pack": "Caster-Chip-Pack",
-            "Caster-Dualchip": "Caster-Dualchip",
-            "Chip-Catalyst": "Chip-Catalyst",
-            "Coagulating-Gel": "Coagulating-Gel",
-            "Commendation-Certificate": "Commendation-Certificate",
-            "Compound-Cutting-Fluid": "Compound-Cutting-Fluid",
-            "Crystalline-Circuit": "Crystalline-Circuit",
-            "Crystalline-Component": "Crystalline-Component",
-            "Crystalline-Electronic-Unit": "Crystalline-Electronic-Unit",
-            "Cutting-Fluid-Solution": "Cutting-Fluid-Solution",
-            "D32-Steel": "D32-Steel",
-            "Damaged-Device": "Damaged-Device",
-            "Data-Supplement-Instrument": "Data-Supplement-Instrument",
-            "Data-Supplement-Stick": "Data-Supplement-Stick",
-            "Defender-Chip": "Defender-Chip",
-            "Defender-Chip-Pack": "Defender-Chip-Pack",
-            "Defender-Dualchip": "Defender-Dualchip",
-            "Device": "Device",
-            "Diketon": "Diketon",
-            "Distinction-Certificate": "Distinction-Certificate",
-            "Drill-Battle-Record": "Drill-Battle-Record",
-            "Ester": "Ester",
-            "Frontline-Battle-Record": "Frontline-Battle-Record",
-            "Furniture-Part": "Furniture-Part",
-            "Grindstone": "Grindstone",
-            "Grindstone-Pentahydrate": "Grindstone-Pentahydrate",
-            "Guard-Chip": "Guard-Chip",
-            "Guard-Chip-Pack": "Guard-Chip-Pack",
-            "Guard-Dualchip": "Guard-Dualchip",
-            "Incandescent-Alloy": "Incandescent-Alloy",
-            "Incandescent-Alloy-Block": "Incandescent-Alloy-Block",
-            "Integrated-Device": "Integrated-Device",
-            "Keton-Colloid": "Keton-Colloid",
-            "LMD": "LMD",
-            "Loxic-Kohl": "Loxic-Kohl",
-            "Manganese-Ore": "Manganese-Ore",
-            "Manganese-Trihydrate": "Manganese-Trihydrate",
-            "Medic-Chip": "Medic-Chip",
-            "Medic-Chip-Pack": "Medic-Chip-Pack",
-            "Medic-Dualchip": "Medic-Dualchip",
-            "Module-Data-Block": "Module-Data-Block",
-            "Nucleic-Crystal-Sinter": "Nucleic-Crystal-Sinter",
-            "Optimized-Device": "Optimized-Device",
-            "Originite-Prime": "Originite-Prime",
-            "Orirock": "Orirock",
-            "Orirock-Cluster": "Orirock-Cluster",
-            "Orirock-Concentration": "Orirock-Concentration",
-            "Orirock-Cube": "Orirock-Cube",
-            "Oriron": "Oriron",
-            "Oriron-Block": "Oriron-Block",
-            "Oriron-Cluster": "Oriron-Cluster",
-            "Oriron-Shard": "Oriron-Shard",
-            "Orundum": "Orundum",
-            "Polyester": "Polyester",
-            "Polyester-Lump": "Polyester-Lump",
-            "Polyester-Pack": "Polyester-Pack",
-            "Polyketon": "Polyketon",
-            "Polymerization-Preparation": "Polymerization-Preparation",
-            "Polymerized-Gel": "Polymerized-Gel",
-            "Purchase-Certificate": "Purchase-Certificate",
-            "Pure-Gold": "Pure-Gold",
-            "RMA70-12": "RMA70-12",
-            "RMA70-24": "RMA70-24",
-            "Refined-Solvent": "Refined-Solvent",
-            "Semi-Synthetic-Solvent": "Semi-Synthetic-Solvent",
-            "Skill-Summary-1": "Skill-Summary-1",
-            "Skill-Summary-2": "Skill-Summary-2",
-            "Skill-Summary-3": "Skill-Summary-3",
-            "Sniper-Chip": "Sniper-Chip",
-            "Sniper-Chip-Pack": "Sniper-Chip-Pack",
-            "Sniper-Dualchip": "Sniper-Dualchip",
-            "Specialist-Chip": "Specialist-Chip",
-            "Specialist-Chip-Pack": "Specialist-Chip-Pack",
-            "Specialist-Dualchip": "Specialist-Dualchip",
-            "Strategic-Battle-Record": "Strategic-Battle-Record",
-            "Sugar": "Sugar",
-            "Sugar-Lump": "Sugar-Lump",
-            "Sugar-Pack": "Sugar-Pack",
-            "Sugar-Substitute": "Sugar-Substitute",
-            "Supporter-Chip": "Supporter-Chip",
-            "Supporter-Chip-Pack": "Supporter-Chip-Pack",
-            "Supporter-Dualchip": "Supporter-Dualchip",
-            "Tactical-Battle-Record": "Tactical-Battle-Record",
-            "Transmuted-Salt": "Transmuted-Salt",
-            "Transmuted-Salt-Agglomerate": "Transmuted-Salt-Agglomerate",
-            "Vanguard-Chip": "Vanguard-Chip",
-            "Vanguard-Chip-Pack": "Vanguard-Chip-Pack",
-            "Vanguard-Dualchip": "Vanguard-Dualchip",
-            "White-Horse-Kohl": "White-Horse-Kohl",
-        }
-    ),
-    weights_path=best_run("008__yolov8n_yaml__500__2024_01_13__02_50_24"),
+    ontology=CaptionOntology(caption_ontology),
+    weights_path=best_run(run),
 )
 
 base_model.label(

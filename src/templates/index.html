@@ -27,8 +27,7 @@
 <div class="flex flex-row justify-center gap-x-5 py-5">
     {% if is_dev %}
     <button type="button" class="btn-red"
-            hx-get="/reload"
-            hx-on::after-request="location.reload(true);">
+            hx-get="/reload">
         {{ i18t('button.reload') }}
     </button>
     {% endif %}

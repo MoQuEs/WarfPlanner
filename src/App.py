@@ -1,13 +1,12 @@
-import sys
-import threading
-import webbrowser
+from os import cpu_count
+from threading import Thread
 
-import webview
 from waitress import serve
+from webbrowser import open as web_open
+from webview import start as webview_start, create_window
 
-from Init import app, listen_addr, listen_port, link, i18t, config
+from Init import app, listen_addr, listen_port, link, language, config
 from Routes import main
-from Utils import cpu_count
 
 
 def dev_server() -> callable:
@@ -33,7 +32,7 @@ try:
         if config.environment() == "development":
             dev_server()()
         else:
-            webbrowser.open(link)
+            web_open(link)
             prod_server()()
 
     else:
@@ -42,17 +41,16 @@ try:
         else:
             target = prod_server()
 
-        server_thread = threading.Thread(target=target)
+        server_thread = Thread(target=target)
         server_thread.daemon = True
         server_thread.start()
 
-        win = webview.create_window(
-            title=i18t("title"),
+        win = create_window(
+            title=language.get_text("title"),
             url=link,
-            # frameless=True,
         )
-        webview.start()
+        webview_start()
 except Exception as ex:
     print(ex)
 finally:
-    sys.exit()
+    exit()

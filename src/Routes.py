@@ -3,7 +3,7 @@ from pprint import pprint
 
 from flask import Blueprint, redirect, Response
 
-from Init import data, saved_data, template, reload_init
+from Init import arknights, save, template, reload_init
 
 main = Blueprint("main", "main")
 
@@ -29,39 +29,36 @@ def reload_route():
 
 @main.get("/materials")
 def materials_route():
-    material_sections = []
+    sections = []
 
-    materials_to_upgrade = data.get_materials_to_upgrade(saved_data.upgrades)
+    materials_to_upgrade = arknights.get_materials_to_upgrade(save.upgrades)
 
-    for planner_material_section in data.materials:
-        material_section = {}
-        for (
-            planner_material_group_name,
-            planner_material_group,
-        ) in planner_material_section.items():
-            material_group = {}
-            for planner_material in planner_material_group:
+    for display_section in arknights.display_materials:
+        section = {}
+        for (display_group_name, display_group) in display_section.items():
+            group = {}
+            for material_to_show in display_group:
                 have = 0
-                if planner_material in saved_data.materials:
-                    have = saved_data.materials[planner_material]
+                if material_to_show in save.materials:
+                    have = save.materials[material_to_show]
 
                 need = 0
-                if planner_material in materials_to_upgrade["all"]:
-                    need = materials_to_upgrade["all"][planner_material]
+                if material_to_show in materials_to_upgrade["all"]:
+                    need = materials_to_upgrade["all"][material_to_show]
 
-                material_group[planner_material] = {
-                    "material": data.get_material(planner_material),
+                group[material_to_show] = {
+                    "material": arknights.get_material(material_to_show),
                     "have": have,
                     "need": need,
                 }
 
-            material_section[planner_material_group_name] = material_group
+            section[display_group_name] = group
 
-        material_sections.append(material_section)
+        sections.append(section)
 
     return template(
         "materials",
-        material_sections=material_sections,
+        sections=sections,
     )
 
 
@@ -69,9 +66,9 @@ def materials_route():
 def upgrades_route():
     upgrades_characters = []
 
-    materials_to_upgrade = data.get_materials_to_upgrade(saved_data.upgrades)
-    for cid, upgrade_data in saved_data.upgrades.items():
-        character = data.get_character(cid)
+    materials_to_upgrade = arknights.get_materials_to_upgrade(save.upgrades)
+    for cid, upgrade_data in save.upgrades.items():
+        character = arknights.get_character(cid)
         materials = materials_to_upgrade[cid]
 
         upgrades_characters.append(
@@ -81,8 +78,6 @@ def upgrades_route():
                 "materials": materials,
             }
         )
-
-    pprint(upgrades_characters)
 
     return template(
         "upgrades",
