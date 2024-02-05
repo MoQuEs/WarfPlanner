@@ -19,6 +19,25 @@ of materials.
 
 ## Development
 
+### TODO
+- Fix character search box
+- Add save plans
+- Add tooltips to icons
+- Add Import/Export plans for:
+    - https://gamepress.gg
+    - https://penguin-stats.io
+- Add screencapture from game
+- Add AI for materials from screenshots/screencapture
+- Add OCR for materials amounts
+- Make it usable
+- Make it executable/installable
+- Add hide and show for characters in character list
+
+### TODO (in future if all above is done)
+- Add rooster mechanism for characters like:
+  - https://www.krooster.com/
+- Add AI for characters recognition from screenshots/screencapture
+
 ### Dependencies
 - Python 3.8-3.11
 ### Setup

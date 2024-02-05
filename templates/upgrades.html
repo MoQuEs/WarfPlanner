@@ -1,0 +1,8 @@
+{% for character_to_upgrade in characters_to_upgrade %}
+    {{ template(
+        'upgrade',
+        character=character_to_upgrade.character,
+        upgrades=character_to_upgrade.upgrades,
+        materials=character_to_upgrade.materials
+    )|safe }}
+{% endfor %}

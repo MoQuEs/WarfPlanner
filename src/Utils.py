@@ -1,6 +1,6 @@
 from glob import glob
 from json import load, dumps
-from os import getcwd, makedirs, remove
+from os import getcwd, makedirs, remove, getenv
 from os.path import dirname, join, exists, isfile, isdir
 from random import randint, choice
 from re import sub, escape, IGNORECASE, match, findall
@@ -95,7 +95,7 @@ def src_dir(*paths: [str]) -> str:
 
 
 def static_dir(*paths: [str]) -> str:
-    return src_dir("static", *paths)
+    return pwd_dir("static", *paths)
 
 
 def css_dir(*paths: [str]) -> str:
@@ -135,23 +135,23 @@ def js_dir(*paths: [str]) -> str:
 
 
 def templates_dir(*paths: [str]) -> str:
-    return src_dir("templates", *paths)
+    return pwd_dir("templates", *paths)
 
 
 def save_file() -> str:
-    return src_dir("save.json")
+    return pwd_dir("save.json")
 
 
 def config_file() -> str:
-    return src_dir("config.ini")
+    return pwd_dir("config.ini")
 
 
 def arknights_file() -> str:
-    return src_dir("arknights.json")
+    return pwd_dir("arknights.json")
 
 
 def language_file() -> str:
-    return src_dir("language.json")
+    return pwd_dir("language.json")
 
 
 def get_file_content(path: str) -> str:
@@ -179,17 +179,14 @@ def put_json_file_content(path: str, data, **kwargs):
 def download_file(url: str, path: str, **kwargs) -> ThreadPool:
     def download():
         if not exists(path) or kwargs.get("force", False) is True:
-            if kwargs.get("verbose", False) is True:
-                print("Downloading %s to %s" % (url, path))
-
             mkdir_from_file(path)
             response = get(url, allow_redirects=True)
             if response.status_code >= 500:
-                print("Error downloading %s" % url)
+                print("Error downloading %s\n" % url)
                 return
 
             if response.status_code >= 400:
-                print("Can't downloading %s" % url)
+                print("Can't downloading %s\n" % url)
                 return
 
             with open(path, "wb") as handler:
@@ -356,3 +353,19 @@ def map_object(old: object, new: object):
             for key2, value2 in value.items():
                 if not key2.startswith("__"):
                     setattr(old, key2, getattr(new, key2))
+
+
+def add_upgrade_material(mm, m: str, c: int):
+    if m not in mm:
+        mm[m] = 0
+
+    mm[m] += c
+
+
+def add_upgrade_materials(mm, upgrade: dict[str, int]):
+    for m, c in upgrade.items():
+        add_upgrade_material(mm, m, c)
+
+
+def getenv_bool(key: str) -> bool:
+    return True if getenv(key) in ["True", "true", "t", "1"] else False

@@ -1,0 +1,91 @@
+<form class="card-smp flex flex-col gap-2" data-character="{{ character.id }}" data-type="upgrade">
+    <div class="flex flex-row gap-2">
+        <div class="flex flex-col gap-2">
+            <span class="text-nowrap">{{ character.get_name(language) }}</span>
+
+            <img src="/static/images/avatars/{{ character.id }}.png"
+                 title="{{ character.get_name(language) }}"
+                 alt="{{ character.get_name(language) }}"
+                 class="max-w-32 max-h-32 min-w-16 min-h-16 w-auto h-auto"
+            >
+
+            <div class="flex flex-row flex-nowrap justify-center">
+                <i class="bi bi-pencil icon-btn icon-btn-primary btn-smp btn-alternative2 btn-left"
+                   hx-get="/upgrade/form/{{ character.id }}"
+                   hx-target="closest form"
+                   hx-swap="outerHTML"
+                   hx-history="false"
+                ></i>
+                <i class="bi bi-boxes icon-btn icon-btn-red btn-smp btn-alternative2 btn-center"
+                    onclick="add_toggle_upgrade_materials(this)"></i>
+                <i class="bi bi-trash icon-btn icon-btn-red btn-smp btn-alternative2 btn-right"
+                   hx-delete="/upgrade/{{ character.id }}"
+                   hx-confirm="{{ i18t('are_you_sure') }}"
+                   hx-target="closest form"
+                   hx-swap="outerHTML"
+                   hx-history="false"
+                   hx-on::after-request="remove_selection_from_character_list('{{ character.id }}')"
+                ></i>
+            </div>
+        </div>
+
+        <div class="flex flex-row flex-wrap gap-x-5 gap-y-2">
+            <div class="flex flex-col">
+                <span class="text-nowrap whitespace-nowrap">{{ i18t('label.main') }}:</span>
+                <span class="text-nowrap whitespace-nowrap {% if not upgrades.level.is_enabled() %}text-rose-500{% endif %}">
+                    {{ i18t('label.level') }}: {{ upgrades.level }}
+                </span>
+                <span class="text-nowrap whitespace-nowrap {% if not upgrades.all_skil_lvlup.is_enabled() %}text-rose-500{% endif %}">
+                    {{ i18t('label.all_skills') }}: {{ upgrades.all_skil_lvlup }}
+                </span>
+            </div>
+
+            {% if character.has_skills() %}
+            <div class="flex flex-col">
+                <span class="text-nowrap whitespace-nowrap">{{ i18t('label.skills') }}:</span>
+                {% for sid, skill in character.get_skills().items() %}
+                    {% if sid in upgrades.skills %}
+                    <span class="text-nowrap whitespace-nowrap {% if not upgrades.skills[sid].is_enabled() %}text-rose-500{% endif %}">
+                        {{ skill.get_name(language) }}: {{ upgrades.skills[sid] }}
+                    </span>
+                    {% else %}
+                    <span class="text-nowrap whitespace-nowrap text-rose-500">
+                        {{ skill.get_name(language) }}: 0 -> 0
+                    </span>
+                    {% endif %}
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {% if character.has_modules() %}
+            <div class="flex flex-col">
+                <span class="text-nowrap whitespace-nowrap">{{ i18t('label.modules') }}:</span>
+                {% for mid, module in character.get_modules().items() %}
+                    {% if mid in upgrades.modules %}
+                    <span class="text-nowrap whitespace-nowrap {% if not upgrades.modules[mid].is_enabled() %}text-rose-500{% endif %}">
+                        {{ module.get_name(language) }}: {{ upgrades.modules[mid] }}
+                    </span>
+                    {% else %}
+                    <span class="text-nowrap whitespace-nowrap text-rose-500">
+                        {{ module.get_name(language) }}: 0 -> 0
+                    </span>
+                    {% endif %}
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="upgrade_materials flex flex-row flex-wrap gap-1 hidden">
+        {% for material_id, material_count in materials.items() %}
+        <div class="relative max-w-20 max-h-20 min-w-16 min-h-16">
+            <img src="/static/images/materials/{{ material_id }}.png"
+                 class="w-auto h-auto"
+            >
+            <div class="absolute top-3 right-0 opacity-80 bg-slate-800 py-0.5 px-2 font-bold">
+                {{ material_count }}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</form>

@@ -25,16 +25,23 @@ class Config:
         config.add_section("app")
         config.set("app", "# 0-65535 (0 = random)")
         config.set("app", "port", "0" if is_prod else "49650")
-        config.set("app", "# development (will launch in single thread) / production")
+
+        config.set("app", "# development / production")
         config.set("app", "environment", "production" if is_prod else "development")
+
+        config.set("app", "# flask (single thread) / waitress")
+        config.set("app", "server", "waitress" if is_prod else "flask")
+
         config.set("app", "# browser (will spawn only server and access will by through browser) / window")
         config.set("app", "mode", "window" if is_prod else "browser")
 
         config.add_section("settings")
         config.set("settings", "# 1.0 - X.X")
         config.set("settings", "scale", "1.0")
+
         config.set("settings", "# light / dark")
         config.set("settings", "theme", "dark")
+
         config.set("settings", "# en_US / ja_JP / ko_KR / zh_CN")
         config.set("settings", "language", "en_US")
 
@@ -62,6 +69,9 @@ class Config:
 
     def port(self, value: int = None) -> int:
         return int(self.__set_and_get("app", "port", value))
+
+    def server(self, value: str = None) -> str:
+        return self.__set_and_get("app", "server", value)
 
     def environment(self, value: str = None) -> str:
         return self.__set_and_get("app", "environment", value)

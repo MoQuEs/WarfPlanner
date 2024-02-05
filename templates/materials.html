@@ -1,0 +1,25 @@
+{% for section in sections %}
+<div class="flex flex-row flex-wrap gap-5">
+    {% for group_name, group in section.items() %}
+    <div class="card-smp flex flex-col flex-wrap">
+        <p>{{ i18t(group_name) }}</p>
+        <div class="flex flex-row flex-nowrap gap-1">
+            {% for material_name, material in group.items() %}
+            <div class="relative max-w-24 max-h-24 min-w-16 min-h-16">
+                <img src="/static/images/materials/{{ material.material.id }}.png"
+                     title="{{ material.material.get_name(language) }}"
+                     alt="{{ material.material.get_name(language) }}"
+                     class="w-auto h-auto"
+                >
+                <div class="absolute top-3 right-0 opacity-80 bg-slate-800 py-0.5 px-2 font-bold justify-end justify-items-end">
+                    <p class="{% if material.have >= material.need %} text-green-500 {% else %} text-red-500 {% endif %}">
+                        {{ material.have }} / {{ material.need }}
+                    </p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endfor %}

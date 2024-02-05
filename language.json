@@ -1,0 +1,78 @@
+{
+  "texts": {
+    "en_US": {
+      "title": "WarfPlanner",
+      "button": {
+        "reload": "Reload",
+        "load_materials": "Load materials",
+        "import_export_inventory": "Import/Export materials",
+        "import_inventory_from_game": "Add materials",
+        "load_characters": "Load characters",
+        "add_character": "Add character",
+        "show_only_non_global_characters": "Show only non-global characters"
+      },
+      "placeholder": {
+        "search_character": "Search character..."
+      },
+      "label": {
+        "main": "Main",
+        "elite": "Elite",
+        "level": "Level",
+        "all_skills": "All skills",
+        "skills": "Skills",
+        "modules": "Modules",
+        "elite_from": "Elite from",
+        "elite_to": "Elite to",
+        "level_from": "Level from",
+        "level_to": "Level to",
+        "skill_from": "Skill from",
+        "skill_to": "Skill to",
+        "module_from": "Module from",
+        "module_to": "Module to",
+        "from": "From",
+        "to": "To"
+      },
+      "materials": {
+        "main": "Main",
+        "module": "Module",
+        "exp": "Exp cards",
+        "skill": "Skill books",
+        "orirock": "Orirock",
+        "sugar": "Sugar",
+        "polyester": "Polyester",
+        "oriron": "Oriron",
+        "keton": "Keton",
+        "device": "Device",
+        "grindstone": "Grindstone",
+        "kohl": "Kohl",
+        "solvent": "Solvent",
+        "gel": "Gel",
+        "crystalline": "Crystalline",
+        "manganese": "Manganese",
+        "alloy": "Alloy",
+        "cutting_fluid": "Cutting fluid",
+        "salt": "Salt",
+        "rma70": "RMA70",
+        "???_1": "??? 2",
+        "???_2": "??? 2",
+        "t5_1": "Craftable T5 (old)",
+        "t5_2": "Craftable T5 (new)",
+        "vanguard_chips": "Vanguard chips",
+        "guard_chips": "Guard chips",
+        "defender_chips": "Defender chips",
+        "sniper_chips": "Sniper chips",
+        "caster_chips": "Caster chips",
+        "medic_chips": "Medic chips",
+        "supporter_chips": "Supporter chips",
+        "specialist_chips": "Specialist chips"
+      },
+      "are_you_sure": "Are you sure?"
+    },
+    "ja_JP": {
+    },
+    "ko_KR": {
+    },
+    "zh_CN": {
+    }
+  }
+}

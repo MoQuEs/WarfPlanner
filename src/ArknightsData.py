@@ -1,6 +1,4 @@
-import pprint
 from glob import glob
-from os import getenv
 from os.path import join
 from re import match
 
@@ -25,9 +23,13 @@ from Utils import (
     materials_dir,
     avatars_dir,
     skills_dir,
+    getenv_bool
 )
 
 load_dotenv()
+
+FORCE_DOWNLOAD_DATA = getenv_bool("ARKNIGHTS.FORCE_DOWNLOAD_DATA")
+FORCE_DOWNLOAD_IMAGES = getenv_bool("ARKNIGHTS.FORCE_DOWNLOAD_IMAGES")
 
 print("Downloading Arknights data...")
 for repository, lang in [
@@ -56,7 +58,7 @@ for repository, lang in [
             "https://raw.githubusercontent.com/Kengxxiao/%s/master/%s/gamedata/excel/%s"
             % (repository, lang, file),
             arknights_dir("json", lang, file),
-            force=getenv("ARKNIGHTS.FORCE_DOWNLOAD_DATA", False),
+            force=FORCE_DOWNLOAD_DATA,
         )
 
 download_file_pool.join()
@@ -66,6 +68,9 @@ print("Generating Arknights data...")
 arknights = Arknights()
 excel_glob_path = arknights_dir("json", "**")
 not_obtainable_exemption = ["char_512_aprot"]
+characters_static_en_names = {
+
+}
 
 
 # Static data
@@ -142,22 +147,22 @@ arknights.display_materials = [
         "materials.alloy": ["31024", "31023"],
         "materials.manganese": ["30084", "30083"],
         "materials.crystalline": ["31034", "31033"],
-        "materials.??? 1": ["31074", "31073"],
-        "materials.??? 2": ["31084", "31083"],
+        "materials.???_1": ["31074", "31073"],
+        "materials.???_2": ["31084", "31083"],
     },
     {
         "materials.t5_1": ["30125", "30135", "30115"],
         "materials.t5_2": ["30145", "30155"],
     },
     {
-        "materials.vanguard_chip": ["3213", "3212", "3211"],
-        "materials.guard_chip": ["3223", "3222", "3221"],
-        "materials.defender_chip": ["3233", "3232", "3231"],
-        "materials.sniper_chip": ["3243", "3242", "3241"],
-        "materials.caster_chip": ["3253", "3252", "3251"],
-        "materials.medic_chip": ["3263", "3262", "3261"],
-        "materials.supporter_chip": ["3273", "3272", "3271"],
-        "materials.specialist_chip": ["3283", "3282", "3281"],
+        "materials.vanguard_chips": ["3213", "3212", "3211"],
+        "materials.guard_chips": ["3223", "3222", "3221"],
+        "materials.defender_chips": ["3233", "3232", "3231"],
+        "materials.sniper_chips": ["3243", "3242", "3241"],
+        "materials.caster_chips": ["3253", "3252", "3251"],
+        "materials.medic_chips": ["3263", "3262", "3261"],
+        "materials.supporter_chips": ["3273", "3272", "3271"],
+        "materials.specialist_chips": ["3283", "3282", "3281"],
     },
 ]
 
@@ -205,7 +210,7 @@ for path in glob(join(excel_glob_path, "uniequip_table.json")):
             "https://raw.githubusercontent.com/Aceship/Arknight-Images/main/equip/icon/%s.png"
             % module.icon_id,
             modules_dir("%s.png" % module.icon_id),
-            force=getenv("ARKNIGHTS.FORCE_DOWNLOAD_IMAGES", False),
+            force=FORCE_DOWNLOAD_IMAGES,
         )
 
 
@@ -232,7 +237,7 @@ for json in ["character_table.json", "char_patch_table.json"]:
                 "https://raw.githubusercontent.com/yuanyan3060/ArknightsGameResource/main/avatar/%s.png"
                 % key,
                 avatars_dir("%s.png" % key),
-                force=getenv("ARKNIGHTS.FORCE_DOWNLOAD_IMAGES", False),
+                force=FORCE_DOWNLOAD_IMAGES,
             )
 
             for skill_id, character_skill in character.skills.items():
@@ -244,7 +249,7 @@ for json in ["character_table.json", "char_patch_table.json"]:
                     "https://raw.githubusercontent.com/yuanyan3060/ArknightsGameResource/main/skill/skill_icon_%s.png"
                     % character_skill.icon_id,
                     skills_dir("%s.png" % character_skill.icon_id),
-                    force=getenv("ARKNIGHTS.FORCE_DOWNLOAD_IMAGES", False),
+                    force=FORCE_DOWNLOAD_IMAGES,
                 )
 
             if key in modules:
@@ -287,7 +292,7 @@ for path in glob(join(excel_glob_path, "item_table.json")):
             "https://raw.githubusercontent.com/yuanyan3060/ArknightsGameResource/main/item/%s.png"
             % value["iconId"],
             materials_dir("%s.png" % key),
-            force=getenv("ARKNIGHTS.FORCE_DOWNLOAD_IMAGES", False),
+            force=FORCE_DOWNLOAD_IMAGES,
         )
 
     for key, value in full_json["expItems"].items():
@@ -307,16 +312,6 @@ for path in glob(join(excel_glob_path, "gamedata_const.json")):
     arknights.upgrade_gold_cost = UpgradeGoldCost.from_game_data(full_json)
     arknights.upgrade_exp_map = UpgradeExpMap.from_game_data(full_json)
     arknights.upgrade_gold_map = UpgradeGoldMap.from_game_data(full_json)
-
-
-# Item backgrounds
-# for rarity_id, rarity_icon_id, rarity_name in Rarity.all_as_tuple():
-#     download_file(
-#         "https://raw.githubusercontent.com/yuanyan3060/ArknightsGameResource/main/item_rarity_img/%s.png"
-#         % rarity_icon_id,
-#         materials_background_dir("%s.png" % rarity_icon_id),
-#         force=env("ARKNIGHTS.FORCE_DOWNLOAD_IMAGES", False),
-#     )
 
 
 # Output
