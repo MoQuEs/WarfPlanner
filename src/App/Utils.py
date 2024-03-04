@@ -1,21 +1,19 @@
 from glob import glob
 from json import load, dumps
 from os import getcwd, makedirs, remove, getenv
-from os.path import dirname, join, exists, isfile, isdir
-from random import randint, choice
+from os.path import dirname, join as __join, exists, isfile, isdir
+from random import choice
 from re import sub, escape, IGNORECASE, match, findall
 from shutil import rmtree
 from socket import socket
 from string import ascii_letters, digits
-from typing import Any
-
-from cv2 import imdecode, IMREAD_UNCHANGED, GaussianBlur
-from numpy import ndarray, dtype, generic, uint8, frombuffer, ones_like
+from typing import Any, Callable
 from requests import get
-
-from ThreadPool import ThreadPool
+from atexit import register
+from .ThreadPool import ThreadPool
 
 download_file_pool = ThreadPool(20)
+register(download_file_pool.join)
 
 
 def get_free_port() -> int:
@@ -34,23 +32,23 @@ def mkdir_from_file(path: str):
     makedirs(dirname(path), exist_ok=True)
 
 
-def __join(*paths: [str]) -> str:
-    return str(join(*paths))
+def join(*paths: str) -> str:
+    return str(__join(*paths))
 
 
-def pwd_dir(*paths: [str | int]) -> str:
+def pwd_dir(*paths: str) -> str:
     return str(__join(getcwd(), *paths))
 
 
-def data_join(*paths: [str]) -> str:
+def data_join(*paths: str) -> str:
     return pwd_dir("data", *paths)
 
 
-def arknights_dir(*paths: [str]) -> str:
+def arknights_dir(*paths: str) -> str:
     return data_join("arknights", *paths)
 
 
-def auto_labels_in_dir(*paths: [str]) -> str:
+def auto_labels_in_dir(*paths: str) -> str:
     return data_join("auto_labels_in", *paths)
 
 
@@ -58,11 +56,11 @@ def labels_to_generate() -> str:
     return get_file_content(auto_labels_in_dir("labels_to_generate")).strip()
 
 
-def auto_labels_out_dir(*paths: [str]) -> str:
+def auto_labels_out_dir(*paths: str) -> str:
     return data_join("auto_labels_out", *paths)
 
 
-def labels_dir(*paths: [str]) -> str:
+def labels_dir(*paths: str) -> str:
     return data_join("labels", *paths)
 
 
@@ -70,7 +68,7 @@ def label_data(label: str) -> str:
     return labels_dir(label, "data.yaml")
 
 
-def runs_dir(*paths: [str]) -> str:
+def runs_dir(*paths: str) -> str:
     return data_join("runs", *paths)
 
 
@@ -82,59 +80,59 @@ def model_args(run: str) -> str:
     return runs_dir(run, "args.yaml")
 
 
-def testing_dir(*paths: [str]) -> str:
+def testing_dir(*paths: str) -> str:
     return data_join("testing", *paths)
 
 
-def testing_images_dir(*paths: [str]) -> str:
+def testing_images_dir(*paths: str) -> str:
     return testing_dir("images", *paths)
 
 
-def src_dir(*paths: [str]) -> str:
+def src_dir(*paths: str) -> str:
     return pwd_dir("src", *paths)
 
 
-def static_dir(*paths: [str]) -> str:
+def static_dir(*paths: str) -> str:
     return pwd_dir("static", *paths)
 
 
-def css_dir(*paths: [str]) -> str:
+def css_dir(*paths: str) -> str:
     return static_dir("css", *paths)
 
 
-def images_dir(*paths: [str]) -> str:
+def images_dir(*paths: str) -> str:
     return static_dir("images", *paths)
 
 
-def avatars_dir(*paths: [str]) -> str:
+def avatars_dir(*paths: str) -> str:
     return images_dir("avatars", *paths)
 
 
-def materials_dir(*paths: [str]) -> str:
+def materials_dir(*paths: str) -> str:
     return images_dir("materials", *paths)
 
 
-def materials_background_dir(*paths: [str]) -> str:
+def materials_background_dir(*paths: str) -> str:
     return images_dir("materials_background", *paths)
 
 
-def modules_dir(*paths: [str]) -> str:
+def modules_dir(*paths: str) -> str:
     return images_dir("modules", *paths)
 
 
-def site_dir(*paths: [str]) -> str:
+def site_dir(*paths: str) -> str:
     return images_dir("site", *paths)
 
 
-def skills_dir(*paths: [str]) -> str:
+def skills_dir(*paths: str) -> str:
     return images_dir("skills", *paths)
 
 
-def js_dir(*paths: [str]) -> str:
+def js_dir(*paths: str) -> str:
     return static_dir("js", *paths)
 
 
-def templates_dir(*paths: [str]) -> str:
+def templates_dir(*paths: str) -> str:
     return pwd_dir("templates", *paths)
 
 
@@ -171,12 +169,12 @@ def put_file_content(path: str, text: str):
         file.write(text)
 
 
-def put_json_file_content(path: str, data, **kwargs):
+def put_json_file_content(path: str, data: Any, **kwargs: bool):
     indent = 4 if kwargs.get("pretty", False) is True else None
     put_file_content(path, dumps(data, indent=indent))
 
 
-def download_file(url: str, path: str, **kwargs) -> ThreadPool:
+def download_file(url: str, path: str, **kwargs: bool) -> ThreadPool:
     def download():
         if not exists(path) or kwargs.get("force", False) is True:
             mkdir_from_file(path)
@@ -197,7 +195,7 @@ def download_file(url: str, path: str, **kwargs) -> ThreadPool:
     return download_file_pool
 
 
-def clamp(value, min_value, max_value):
+def clamp(value: int | float, min_value: int | float, max_value: int | float) -> int | float:
     if value < min_value:
         return min_value
     elif value > max_value:
@@ -206,7 +204,7 @@ def clamp(value, min_value, max_value):
         return value
 
 
-def pad_array(array: list, to_length: int, to_append) -> list:
+def pad_array(array: list[Any], to_length: int, to_append: Any) -> list:
     if len(array) >= to_length:
         return array
 
@@ -214,8 +212,10 @@ def pad_array(array: list, to_length: int, to_append) -> list:
         if i >= len(array):
             array.append(to_append)
 
+    return array
 
-def is_between_with_margin(value1, value2, margin):
+
+def is_between_with_margin(value1: int, value2: int, margin: int) -> bool:
     return value2 - margin <= value1 <= value2 + margin
 
 
@@ -224,86 +224,19 @@ def escape_re(text: str) -> str:
 
 
 def remove_duplicate(text: str, character: str = "-") -> str:
-    result = sub(r'' + character + '+', '-', text)
+    result = sub(r"" + character + "+", "-", text)
     return result
 
 
-def get_image_from_url(url: str) -> ndarray | ndarray[Any, dtype[generic | generic]]:
-    response = get(url).content
-    np_arr = frombuffer(response, uint8)
-    return imdecode(np_arr, IMREAD_UNCHANGED)
+def generate_random_string(length: int = 10, characters: str = ascii_letters + digits) -> str:
+    return "".join(choice(characters) for _ in range(length))
 
 
-def get_random_image(width: int, height: int) -> ndarray | ndarray[Any, dtype[generic | generic]]:
-    urls = [
-        "https://picsum.photos/%d/%d" % (width, height),
-        "https://source.unsplash.com/random/%dx%d" % (width, height),
-        "https://loremflickr.com/%d/%d" % (width, height),
-    ]
-
-    return get_image_from_url(urls[randint(0, len(urls) - 1)])
-
-
-def overlay_image(img, img_overlay, pos):
-    x, y = pos
-
-    # Overlay alpha channel ranges
-    try:
-        alpha_mask = img_overlay[:, :, 3] / 255.0
-    except IndexError:
-        alpha_mask = ones_like(img[:, :, 0])
-
-    # Image ranges
-    y1, y2 = max(0, y), min(img.shape[0], y + img_overlay.shape[0])
-    x1, x2 = max(0, x), min(img.shape[1], x + img_overlay.shape[1])
-
-    # Overlay ranges
-    y1o, y2o = max(0, -y), min(img_overlay.shape[0], img.shape[0] - y)
-    x1o, x2o = max(0, -x), min(img_overlay.shape[1], img.shape[1] - x)
-
-    # Exit if nothing to do
-    if y1 >= y2 or x1 >= x2 or y1o >= y2o or x1o >= x2o:
-        return
-
-    channels = img.shape[2]
-
-    alpha = alpha_mask[y1o:y2o, x1o:x2o]
-    alpha_inv = 1.0 - alpha
-
-    for c in range(channels):
-        img[y1:y2, x1:x2, c] = alpha * img_overlay[y1o:y2o, x1o:x2o, c] + alpha_inv * img[y1:y2, x1:x2, c]
-
-
-def add_blur(image, kernel: tuple | int = 5, sigma: tuple | float = 0):
-    if isinstance(kernel, int):
-        kernel_size = (kernel, kernel)
-    else:
-        kernel_size = kernel
-
-    if isinstance(sigma, float | int):
-        sigmaX = float(sigma)
-        sigmaY = float(sigma)
-    else:
-        sigmaX = float(sigma[0])
-        sigmaY = float(sigma[1])
-
-    return GaussianBlur(image, kernel_size, sigmaX, None, sigmaY)
-
-
-def generate_random_string(length: int = 10, characters: str = ascii_letters + digits):
-    return ''.join(choice(characters) for _ in range(length))
-
-
-def get_mats_to_generate_auto_labels(
-        arknights_data,
-        fn_filter: callable = lambda data: True,
-        ret_as_arr: bool = False
-) -> list:
+def get_mats_to_generate_auto_labels(arknights_data, fn_filter: Callable = lambda data: True) -> list[list[str | int]]:
     data = []
 
     regexp = r"([a-z0-9-]+)[\r\n]+(\d+)[\r\n]+?(Over Represented|Under Represented)?"
-    find = findall(regexp, labels_to_generate(), IGNORECASE)
-    for (name, count, represented) in find:
+    for name, count, represented in findall(regexp, labels_to_generate(), IGNORECASE):
         count = int(count)
         mid = arknights_data.get_material_id_by_model_class(name)
 
@@ -311,18 +244,15 @@ def get_mats_to_generate_auto_labels(
             "name": name,
             "mid": mid,
             "count": count,
-            "represented": represented
+            "represented": represented,
         }
         if fn_filter(ret_data):
-            if ret_as_arr:
-                data.append([name, mid, count, represented])
-            else:
-                data.append(ret_data)
+            data.append([name, mid, count, represented])
 
     return data
 
 
-def delete_by_pattern(directory: str, search_pattern: str, filter_pattern: str):
+def delete_by_pattern(directory: str, search_pattern: str, filter_pattern: str) -> None:
     for path in glob(__join(directory, search_pattern)):
         if match(filter_pattern, path) is None:
             continue
@@ -336,15 +266,15 @@ def delete_by_pattern(directory: str, search_pattern: str, filter_pattern: str):
             print(f"Error deleting {path}: {e}")
 
 
-def clear_auto_labels_in_dir():
+def clear_auto_labels_in_dir() -> None:
     delete_by_pattern(auto_labels_in_dir(), "*", r"^.*\.(png|je?pg)$")
 
 
-def clear_auto_labels_out_dir():
+def clear_auto_labels_out_dir() -> None:
     delete_by_pattern(auto_labels_out_dir(), "*", r"^.*(annotations|images|train|valid|data\.yaml)$")
 
 
-def map_object(old: object, new: object):
+def map_object(old: object, new: object) -> None:
     for key, value in old.__class__.__dict__.items():
         if not key.startswith("__"):
             setattr(old, key, getattr(new, key))
@@ -355,16 +285,16 @@ def map_object(old: object, new: object):
                     setattr(old, key2, getattr(new, key2))
 
 
-def add_upgrade_material(mm, m: str, c: int):
-    if m not in mm:
-        mm[m] = 0
+def add_upgrade_material(materials: dict[str, int], mid: str, count: int) -> None:
+    if mid not in materials:
+        materials[mid] = 0
 
-    mm[m] += c
+    materials[mid] += count
 
 
-def add_upgrade_materials(mm, upgrade: dict[str, int]):
-    for m, c in upgrade.items():
-        add_upgrade_material(mm, m, c)
+def add_upgrade_materials(materials: dict[str, int], upgrade: dict[str, int], times: int = 1) -> None:
+    for mid, count in upgrade.items():
+        add_upgrade_material(materials, mid, count * times)
 
 
 def getenv_bool(key: str) -> bool:

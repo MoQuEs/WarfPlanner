@@ -1,0 +1,12 @@
+<div class="flex flex-col gap-4">
+    <div class="grid grid-cols-1 gap-4 pl-16 md:pl-0">
+        {% if is_dev %}
+        <button type="button" class="flex grow btn btn-light" onclick="load_settings()">
+            <i class="bi bi-arrow-down-up pr-1"></i>
+            {{ i18t('button.load_settings') }}
+        </button>
+        {% endif %}
+    </div>
+
+    {{ template('settings-form')|safe }}
+</div>

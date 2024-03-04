@@ -1,0 +1,20 @@
+<div class="flex flex-col gap-4">
+    <div class="grid grid-cols-1 gap-4 pl-16 md:pl-0">
+        {% if is_dev %}
+        <button type="button" class="flex grow btn btn-light" onclick="load_about()">
+            <i class="bi bi-arrow-down-up pr-1"></i>
+            {{ i18t('button.load_about') }}
+        </button>
+        {% endif %}
+    </div>
+
+    <div class="flex flex-col flex-wrap card-smp">
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ i18t('about.title') }}</h1>
+        <p class="text-gray-700 dark:text-gray-300">
+            {{ i18t('about.description_1') }}
+        </p>
+        <p class="text-gray-700 dark:text-gray-300">
+            {{ i18t('about.description_2') }}
+        </p>
+    </div>
+</div>

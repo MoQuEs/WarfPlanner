@@ -1,0 +1,42 @@
+<div class="flex flex-col flex-nowrap gap-2 material">
+    <div class="relative max-h-24 max-w-24 min-w-16 min-h-16 place-self-center">
+        <img src="/static/images/materials/{{ material.id }}.png"
+             title="{{ material.get_name(language) }}"
+             alt="{{ material.get_name(language) }}"
+             class="h-auto w-auto"
+             loading="lazy"
+        />
+        <div class="absolute top-1 right-0 justify-end justify-items-end bg-slate-800 px-2 font-bold opacity-80 py-0.5">
+            <p class="text-green-400">{{ have }}</p>
+        </div>
+        <div class="absolute top-8 right-0 justify-end justify-items-end bg-slate-800 px-2 font-bold opacity-80 py-0.5">
+            <p class="text-red-400">{{ need }}</p>
+        </div>
+        <div class="absolute top-14 right-0 justify-end justify-items-end bg-slate-800 px-2 font-bold opacity-80 py-0.5">
+            {% if have > need %}
+            <p class="text-green-400">{{ abs(have - need) }}</p>
+            {% elif have < need %}
+            <p class="text-red-400">{{ abs(have - need) }}</p>
+            {% else %}
+            <p class="text-gray-300">0</p>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if show_input %}
+    {{ template(
+        'components/number_input',
+        input_id="material-have-%s" % material.id,
+        input_name="have",
+        input_min="0",
+        input_value=have,
+        input_classes="max-w-24",
+        props={
+            'hx-post': "/material/%s?need=%d" % (material.id, need),
+            'hx-trigger': "change",
+            'hx-target': "closest .material",
+            'hx-swap': "outerHTML",
+        }
+    )|safe }}
+    {% endif %}
+</div>

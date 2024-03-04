@@ -1,11 +1,12 @@
 tailwind.config = {
+    darkMode: 'class',
   theme: {
     screens: {
-      'phone': '768px',
-      'tablet': '1024px',
-      'laptop': '1366px',
-      'desktop': '1920px',
-      'desktop2': '2560px',
+      'sm': '768px',
+      'md': '1024px',
+      'lg': '1300px',
+      'xl': '1850px',
+      '2xl': '2400px',
     }
   }
 }

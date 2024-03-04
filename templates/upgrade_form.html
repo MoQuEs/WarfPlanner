@@ -1,110 +1,102 @@
-<form class="card-smp flex flex-col gap-2"
-      data-character="{{ character.id }}"
-      data-type="upgrade_from"
+<form class="flex flex-col gap-4 card-smp"
       hx-post="/upgrade/{{ character.id }}"
       hx-swap="outerHTML"
-      hx-history="false"
-      hx-on::after-request="load_materials()">
-    <div class="flex flex-row gap-2">
+      hx-on--after-request="load_materials()"
+>
+    <div class="flex flex-row gap-4">
         <div class="flex flex-col gap-2">
             <span class="text-nowrap">{{ character.get_name(language) }}</span>
 
             <img src="/static/images/avatars/{{ character.id }}.png"
                  title="{{ character.get_name(language) }}"
                  alt="{{ character.get_name(language) }}"
-                 class="max-w-32 max-h-32 min-w-16 min-h-16 w-auto h-auto"
-            >
+                 class="h-auto max-h-32 w-auto max-w-32 min-w-16 min-h-16"
+                 loading="lazy"
+            />
 
             <div class="flex flex-row flex-nowrap justify-center">
                 <i class="bi bi-arrow-left icon-btn icon-btn-primary btn-smp btn-alternative2 btn-left"
                    hx-get="/upgrade/{{ character.id }}"
                    hx-target="closest form"
                    hx-swap="outerHTML"
-                   hx-history="false"
                 ></i>
                 <button type="submit" class="btn-smp btn-alternative2 btn-center">
                     <i class="bi bi-floppy icon-btn icon-btn-green"></i>
-                </button>
-                <button type="reset" class="btn-smp btn-alternative2 btn-center">
-                    <i class="bi bi-x-lg icon-btn icon-btn-orange"></i>
                 </button>
                 <i class="bi bi-trash icon-btn icon-btn-red btn-smp btn-alternative2 btn-right"
                    hx-delete="/upgrade/{{ character.id }}"
                    hx-confirm="{{ i18t('are_you_sure') }}"
                    hx-target="closest form"
                    hx-swap="outerHTML"
-                   hx-history="false"
-                   hx-on::after-request="remove_selection_from_character_list('{{ character.id }}')"
-                   hx-on::after-request="load_materials()"
+                   hx-on--after-request="remove_selection_from_character_list('{{ character.id }}')"
+                   hx-on--after-request="load_materials()"
                 ></i>
             </div>
         </div>
 
-        <div class="flex flex-col flex-nowrap gap-5">
+        <div class="flex flex-row flex-grow flex-wrap gap-4">
             <div class="flex flex-col flex-nowrap gap-1">
                 <span>{{ i18t('label.elite') }}:</span>
-
                 <div class="flex flex-row flex-nowrap gap-2">
                     {{ template(
-                        'components/number_input',
-                        input_id="elite_from-%s" % character.id,
-                        input_name="elite_from",
-                        input_min="0",
-                        input_max="3",
-                        input_value=upgrade.level.elite_from
+                    'components/number_input',
+                    input_id="elite_from-%s" % character.id,
+                    input_name="elite_from",
+                    input_min="0",
+                    input_max="2",
+                    input_value=upgrade.level.elite_from
                     )|safe }}
                     <span>:</span>
                     {{ template(
-                        'components/number_input',
-                        input_id="elite_to-%s" % character.id,
-                        input_name="elite_to",
-                        input_min="0",
-                        input_max="3",
-                        input_value=upgrade.level.elite_to
+                    'components/number_input',
+                    input_id="elite_to-%s" % character.id,
+                    input_name="elite_to",
+                    input_min="0",
+                    input_max="2",
+                    input_value=upgrade.level.elite_to
                     )|safe }}
                 </div>
 
                 <span>{{ i18t('label.level') }}:</span>
-
                 <div class="flex flex-row flex-nowrap gap-2">
                     {{ template(
-                        'components/number_input',
-                        input_id="level_from-%s" % character.id,
-                        input_name="level_from",
-                        input_min="1",
-                        input_max="90",
-                        input_value=upgrade.level.level_from
+                    'components/number_input',
+                    input_id="level_from-%s" %
+                    character.id,
+                    input_name="level_from",
+                    input_min="1",
+                    input_max="90",
+                    input_value=upgrade.level.level_from
                     )|safe }}
                     <span>:</span>
                     {{ template(
-                        'components/number_input',
-                        input_id="level_to-%s" % character.id,
-                        input_name="level_to",
-                        input_min="1",
-                        input_max="90",
-                        input_value=upgrade.level.level_to
+                    'components/number_input',
+                    input_id="level_to-%s" % character.id,
+                    input_name="level_to",
+                    input_min="1",
+                    input_max="90",
+                    input_value=upgrade.level.level_to
                     )|safe }}
                 </div>
 
                 <span>{{ i18t('label.all_skills') }}:</span>
-
                 <div class="flex flex-row flex-nowrap gap-2">
                     {{ template(
-                        'components/number_input',
-                        input_id="all_skills_from-%s" % character.id,
-                        input_name="all_skills_from",
-                        input_min="1",
-                        input_max="7",
-                        input_value=upgrade.all_skil_lvlup.upgrade_from
+                    'components/number_input',
+                    input_id="all_skil_lvlup_from-%s" % character.id,
+                    input_name="all_skil_lvlup_from",
+                    input_min="1",
+                    input_max="7",
+                    input_value=upgrade.all_skil_lvlup.upgrade_from
                     )|safe }}
                     <span>:</span>
                     {{ template(
-                        'components/number_input',
-                        input_id="all_skills_to-%s" % character.id,
-                        input_name="all_skills_to",
-                        input_min="1",
-                        input_max="7",
-                        input_value=upgrade.all_skil_lvlup.upgrade_to
+                    'components/number_input',
+                    input_id="all_skil_lvlup_to-%s" % character.id,
+                    input_name="all_skil_lvlup_to",
+                    input_min="1",
+                    input_max="7",
+                    input_value=upgrade.all_skil_lvlup.upgrade_to
                     )|safe }}
                 </div>
             </div>
@@ -113,58 +105,56 @@
             <div class="flex flex-col gap-1">
                 <span>{{ i18t('label.skills') }}:</span>
                 <div class="flex flex-col flex-nowrap gap-1">
-                {% for sid, skill in character.get_skills().items() %}
-                    <span class="text-nowrap whitespace-nowrap">{{ skill.get_name(language) }}:</span>
+                    {% for sid, skill in character.get_skills().items() %}
+                    <span class="whitespace-nowrap text-nowrap">{{ skill.get_name(language) }}:</span>
                     <div class="flex flex-row flex-nowrap gap-2">
                         {{ template(
-                            'components/number_input',
-                            input_id="skill_from-%s-%s" % (character.id, sid),
-                            input_name="skill_from-%s" % sid,
-                            input_min="0",
-                            input_max="3",
-                            input_value=upgrade.skills[sid].upgrade_from if sid in upgrade.skills else "0"
+                        'components/number_input',
+                        input_id="skill-%s-%s-from" % (character.id, sid),
+                        input_name="skill-%s-from" % sid,
+                        input_min="0",
+                        input_max="3",
+                        input_value=upgrade.skills[sid].upgrade_from if sid in upgrade.skills else "0"
                         )|safe }}
                         <span>:</span>
                         {{ template(
-                            'components/number_input',
-                            input_id="skill_to-%s-%s" % (character.id, sid),
-                            input_name="skill_to-%s" % sid,
-                            input_min="0",
-                            input_max="3",
-                            input_value=upgrade.skills[sid].upgrade_to if sid in upgrade.skills else "0"
+                        'components/number_input',
+                        input_id="skill-%s-%s-to" % (character.id, sid),
+                        input_name="skill-%s-to" % sid,
+                        input_min="0",
+                        input_max="3",
+                        input_value=upgrade.skills[sid].upgrade_to if sid in upgrade.skills else "0"
                         )|safe }}
                     </div>
-                {% endfor %}
+                    {% endfor %}
                 </div>
             </div>
-            {% endif %}
-
-            {% if character.has_modules() %}
+            {% endif %} {% if character.has_modules() %}
             <div class="flex flex-col gap-1">
                 <span>{{ i18t('label.modules') }}:</span>
                 <div class="flex flex-col flex-nowrap gap-1">
-                {% for mid, module in character.get_modules().items() %}
-                    <span class="text-nowrap whitespace-nowrap">{{ module.get_name(language) }}:</span>
+                    {% for mid, module in character.get_modules().items() %}
+                    <span class="whitespace-nowrap text-nowrap">{{ module.get_name(language) }}:</span>
                     <div class="flex flex-row flex-nowrap gap-2">
                         {{ template(
-                            'components/number_input',
-                            input_id="module_from-%s-%s" % (character.id, mid),
-                            input_name="module_from-%s" % mid,
-                            input_min="0",
-                            input_max="3",
-                            input_value=upgrade.modules[mid].upgrade_from if mid in upgrade.modules else "0"
+                        'components/number_input',
+                        input_id="module-%s-%s-from" % (character.id, mid),
+                        input_name="module-%s-from" % mid,
+                        input_min="0",
+                        input_max="3",
+                        input_value=upgrade.modules[mid].upgrade_from if mid in upgrade.modules else "0"
                         )|safe }}
                         <span>:</span>
                         {{ template(
-                            'components/number_input',
-                            input_id="module_to-%s-%s" % (character.id, mid),
-                            input_name="module_to-%s" % mid,
-                            input_min="0",
-                            input_max="3",
-                            input_value=upgrade.modules[mid].upgrade_to if mid in upgrade.modules else "0"
+                        'components/number_input',
+                        input_id="module-%s-%s-to" % (character.id, mid),
+                        input_name="module-%s-to" % mid,
+                        input_min="0",
+                        input_max="3",
+                        input_value=upgrade.modules[mid].upgrade_to if mid in upgrade.modules else "0"
                         )|safe }}
                     </div>
-                {% endfor %}
+                    {% endfor %}
                 </div>
             </div>
             {% endif %}

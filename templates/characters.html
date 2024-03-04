@@ -1,23 +1,31 @@
-<ul class="gap-2 h-96 overflow-y-auto text-sm text-gray-700 dark:text-gray-200 [&>li]:border-t-2 [&>li:first-child]:border-0"
-    aria-labelledby="dropdownSearchButton">
+<ul class="h-96 gap-2 overflow-y-auto text-sm text-gray-700 dark:text-gray-200 [&>li]:border-t-2 [&>li:first-child]:border-t-0"
+    aria-labelledby="dropdownSearchButton"
+>
     {% for character in characters %}
-    <li class="flex items-center ps-2 py-1 rounded-none hover:bg-gray-100 dark:hover:bg-gray-800 border-gray-300 dark:border-gray-600 cursor-pointer
-            {% if character.in_upgrades %} character_in_upgrades {% endif %}"
-        data-character="{{ character.character.id }}"
+    <li class="flex items-center ps-2 py-1 rounded-none hover:bg-gray-100 dark:hover:bg-gray-800 border-gray-300 dark:border-gray-600 cursor-pointer {% if character.in_upgrades %} character_in_upgrades {% endif %}"
+        data-character="{{ character.id }}"
         data-type="character_list"
-        hx-put="/upgrade/{{ character.character.id }}"
+        data-cn_only="{% if character.cn_only %}1{% else %}0{% endif %}"
+        hx-put="/upgrade/{{ character.id }}"
         hx-target="#upgrades"
         hx-swap="beforeend"
-        hx-on::after-request="add_selection_from_character_list('{{ character.character.id }}')"
+        hx-on--after-request="add_selection_from_character_list('{{ character.id }}')"
     >
-        <img src="/static/images/avatars/{{ character.character.id }}.png"
-             title="{{ character.character.get_name(language) }}"
-             alt="{{ character.character.get_name(language) }}"
-             class="w-auto h-16"
-        >
-        <span class="pl-2">
-            {{ character.character.get_name(language) }}
-        </span>
+        <img src="/static/images/avatars/{{ character.id }}.png"
+             title="{{ character.get_name(language) }}"
+             alt="{{ character.get_name(language) }}"
+             class="h-16 w-auto"
+             loading="lazy"
+        />
+        <span class="pl-2"> {{ character.get_name(language) }} </span>
     </li>
     {% endfor %}
 </ul>
+
+<input id="load_characters"
+       class="hidden"
+       data-loaded="false"
+       type="button"
+       hx-get="/characters"
+       hx-target="#characters"
+/>

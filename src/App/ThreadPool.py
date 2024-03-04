@@ -1,10 +1,10 @@
+from typing import Callable
 from queue import Queue, Empty
 from threading import Thread, Event
 
 
 class Worker(Thread):
-    _TIMEOUT = 10
-
+    _TIMEOUT: int = 10
     tasks: Queue
     daemon: bool = True
     done: Event = Event()
@@ -38,21 +38,21 @@ class ThreadPool:
     workers: list = []
     done: bool = False
 
-    def __init__(self, num_threads: int, tasks: list = None):
+    def __init__(self, num_threads: int, tasks: list | None = None):
         self.tasks = Queue(num_threads)
 
-        self._init_workers(num_threads)
-        for task in (tasks if tasks is not None else []):
+        self.__init_workers(num_threads)
+        for task in tasks if tasks is not None else []:
             self.tasks.put(task)
 
-    def _init_workers(self, num_threads):
+    def __init_workers(self, num_threads):
         for thread_index in range(num_threads):
             self.workers.append(Worker(self.tasks))
 
-    def add_task(self, func: callable, *args, **kwargs):
+    def add_task(self, func: Callable, *args, **kwargs):
         self.tasks.put((func, args, kwargs))
 
-    def _close_all_threads(self):
+    def __close_all_threads(self):
         for worker in self.workers:
             worker.signal_exit()
 
@@ -64,4 +64,4 @@ class ThreadPool:
         self.tasks.join()
 
     def __del__(self):
-        self._close_all_threads()
+        self.__close_all_threads()

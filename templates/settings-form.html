@@ -1,0 +1,165 @@
+<form class="settings">
+    <div class="grid grid-cols-2 gap-4">
+        <div class="flex flex-col card-smp gap-3">
+            <p>{{ i18t('settings.settings.title')|safe }}</p>
+            {{ template(
+            'components/number_input',
+            input_id='scale',
+            input_name='scale',
+            input_min="50",
+            input_max="1000",
+            input_value=config.scale(),
+            label=i18t('settings.settings.scale'),
+            tooltip=i18t('settings.settings.scale-tooltip'),
+            props={
+                'hx-post': "/settings",
+                'hx-trigger': "change",
+                'hx-target': "closest .settings",
+                'hx-swap': "outerHTML",
+            }
+            )|safe }}
+            {{ template(
+            'components/select',
+            select_id='theme',
+            select_name='theme',
+            selected=config.theme(),
+            options=[
+                ('light', i18t('settings.settings.theme-light')),
+                ('dark', i18t('settings.settings.theme-dark'))
+            ],
+            label=i18t('settings.settings.theme'),
+            tooltip=i18t('settings.settings.theme-tooltip'),
+            props={
+                'hx-post': "/settings",
+                'hx-trigger': "change",
+                'hx-target': "closest .settings",
+                'hx-swap': "outerHTML",
+                'onchange': "change_theme()",
+            }
+            )|safe }}
+            {{ template(
+            'components/select',
+            select_id='language',
+            select_name='language',
+            selected=config.language(),
+            options=[
+                ('en_US', i18t('settings.settings.language-en_US')),
+            ],
+            label=i18t('settings.settings.language'),
+            tooltip=i18t('settings.settings.language-tooltip'),
+            props={
+                'hx-post': "/settings",
+                'hx-trigger': "change",
+                'hx-target': "closest .settings",
+                'hx-swap': "outerHTML",
+            }
+            )|safe }}
+        </div>
+        <div class="flex flex-col card-smp gap-3">
+            <p>{{ i18t('settings.app.title')|safe }}</p>
+            {{ template(
+            'components/number_input',
+            input_id='port',
+            input_name='port',
+            input_min="0",
+            input_max="65535",
+            input_value=config.port(),
+            label=i18t('settings.app.port'),
+            tooltip=i18t('settings.app.port-tooltip'),
+            props={
+                'hx-post': "/settings",
+                'hx-trigger': "change",
+                'hx-target': "closest .settings",
+                'hx-swap': "outerHTML",
+            }
+            )|safe }}
+            {{ template(
+            'components/select',
+            select_id='environment',
+            select_name='environment',
+            selected=config.environment(),
+            options=[
+                ('development', i18t('settings.app.environment-development')),
+                ('production', i18t('settings.app.environment-production')),
+            ],
+            label=i18t('settings.app.environment'),
+            tooltip=i18t('settings.app.environment-tooltip'),
+            props={
+                'hx-post': "/settings",
+                'hx-trigger': "change",
+                'hx-target': "closest .settings",
+                'hx-swap': "outerHTML",
+            }
+            )|safe }}
+            {{ template(
+            'components/select',
+            select_id='server',
+            select_name='server',
+            selected=config.server(),
+            options=[
+                ('flask', i18t('settings.app.server-flask')),
+                ('waitress', i18t('settings.app.server-waitress')),
+            ],
+            label=i18t('settings.app.server'),
+            tooltip=i18t('settings.app.server-tooltip'),
+            props={
+                'hx-post': "/settings",
+                'hx-trigger': "change",
+                'hx-target': "closest .settings",
+                'hx-swap': "outerHTML",
+            }
+            )|safe }}
+            {{ template(
+            'components/select',
+            select_id='mode',
+            select_name='mode',
+            selected=config.mode(),
+            options=[
+                ('browser', i18t('settings.app.mode-browser')),
+                ('window', i18t('settings.app.mode-window')),
+            ],
+            label=i18t('settings.app.mode'),
+            tooltip=i18t('settings.app.mode-tooltip'),
+            props={
+                'hx-post': "/settings",
+                'hx-trigger': "change",
+                'hx-target': "closest .settings",
+                'hx-swap': "outerHTML",
+            }
+            )|safe }}
+        </div>
+        <div class="flex flex-col card-smp gap-3">
+            <p>{{ i18t('settings.arknights.title')|safe }}</p>
+            {{ template(
+            'components/checkbox',
+            checkbox_id='force_download_data',
+            checkbox_name='force_download_data',
+            checkbox_value=1,
+            checked=config.force_download_data(),
+            label=i18t('settings.arknights.force_download_data'),
+            tooltip=i18t('settings.arknights.force_download_data-tooltip'),
+            props={
+                'hx-post': "/settings",
+                'hx-trigger': "change",
+                'hx-target': "closest .settings",
+                'hx-swap': "outerHTML",
+            }
+            )|safe }}
+            {{ template(
+            'components/checkbox',
+            checkbox_id='force_download_images',
+            checkbox_name='force_download_images',
+            checkbox_value=1,
+            checked=config.force_download_images(),
+            label=i18t('settings.arknights.force_download_images'),
+            tooltip=i18t('settings.arknights.force_download_images-tooltip'),
+            props={
+                'hx-post': "/settings",
+                'hx-trigger': "change",
+                'hx-target': "closest .settings",
+                'hx-swap': "outerHTML",
+            }
+            )|safe }}
+        </div>
+    </div>
+</form>

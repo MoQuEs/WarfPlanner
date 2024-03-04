@@ -1,25 +1,34 @@
-{% for section in sections %}
-<div class="flex flex-row flex-wrap gap-5">
-    {% for group_name, group in section.items() %}
-    <div class="card-smp flex flex-col flex-wrap">
-        <p>{{ i18t(group_name) }}</p>
-        <div class="flex flex-row flex-nowrap gap-1">
-            {% for material_name, material in group.items() %}
-            <div class="relative max-w-24 max-h-24 min-w-16 min-h-16">
-                <img src="/static/images/materials/{{ material.material.id }}.png"
-                     title="{{ material.material.get_name(language) }}"
-                     alt="{{ material.material.get_name(language) }}"
-                     class="w-auto h-auto"
-                >
-                <div class="absolute top-3 right-0 opacity-80 bg-slate-800 py-0.5 px-2 font-bold justify-end justify-items-end">
-                    <p class="{% if material.have >= material.need %} text-green-500 {% else %} text-red-500 {% endif %}">
-                        {{ material.have }} / {{ material.need }}
-                    </p>
-                </div>
+<div class="flex flex-col gap-4">
+    <div class="grid grid-cols-1 gap-4 pl-16 md:pl-0">
+        {% if is_dev %}
+        <button type="button"
+                class="flex grow btn btn-light"
+                onclick="load_materials()"
+        >
+            <i class="bi bi-arrow-down-up pr-1"></i>
+            {{ i18t('button.load_materials') }}
+        </button>
+        {% endif %}
+    </div>
+
+    {% for section in sections %}
+    <div class="flex flex-row flex-wrap gap-4">
+        {% for group_name, group in section.items() %}
+        <div class="flex flex-col flex-wrap card-smp">
+            <p>{{ i18t(group_name) }}</p>
+            <div class="flex flex-row flex-nowrap gap-2">
+                {% for material_name, material in group.items() %}
+                {{ template(
+                    'material',
+                    material=material.material,
+                    have=material.have,
+                    need=material.need,
+                    show_input=True
+                )|safe}}
+                {% endfor %}
             </div>
-            {% endfor %}
         </div>
+        {% endfor %}
     </div>
     {% endfor %}
 </div>
-{% endfor %}

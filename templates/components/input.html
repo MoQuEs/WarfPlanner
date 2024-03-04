@@ -1,0 +1,30 @@
+<div class="flex flex-col">
+    {% if len(label) > 0 %}
+    <label for="{{ input_id }}" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+        {{ label }}:
+
+        {% if len(tooltip) > 0 %}
+        <br/>
+        <span id="{{ input_id }}-tooltip" class="text-xs text-gray-500 dark:text-gray-400">
+            {{ tooltip }}
+        </span>
+        {% endif %}
+    </label>
+    {% endif %}
+    <input
+            type="{{ input_type }}"
+            id="{{ input_id }}"
+            name="{{ input_name }}"
+            class="{% if input_classes %}{{input_classes}}{% endif %} block h-8 w-full min-w-8 border-x-0 border-gray-300 bg-gray-50 text-center text-sm font-medium text-gray-900 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+            value="{{ input_value }}"
+            placeholder="{{ input_placeholder }}"
+            {% if props %}
+            {% for key, value in props.items() %}
+                {{ key }}="{{ value }}"
+            {% endfor %}
+            {% endif %}
+            {% if required %}required{% endif %}
+            {% if readonly %}readonly{% endif %}
+            {% if disabled %}disabled{% endif %}
+    />
+</div>

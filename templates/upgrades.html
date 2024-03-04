@@ -1,8 +1,36 @@
-{% for character_to_upgrade in characters_to_upgrade %}
-    {{ template(
+<div class="flex flex-col gap-4">
+    <div class="grid grid-cols-2 gap-4 pl-16 md:pl-0">
+        {% if is_dev %}
+        <button type="button"
+                class="flex grow btn btn-light"
+                onclick="load_upgrades()"
+        >
+            <i class="bi bi-arrow-down-up pr-1"></i>
+            {{ i18t('button.load_characters') }}
+        </button>
+        {% endif %}
+        <button data-dropdown-toggle="add_character"
+                data-dropdown-placement="bottom"
+                class="inline-flex grow justify-between gap-3 text-center btn btn-blue"
+                type="button"
+                onclick="load_characters()"
+        >
+            <span>
+                <i class="bi bi-plus-circle pr-1"></i>
+                <span>{{ i18t('button.add_character') }}</span>
+            </span>
+            <i class="bi bi-caret-down"></i>
+        </button>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
+        {% for character_to_upgrade in characters_to_upgrade %}
+        {{ template(
         'upgrade',
         character=character_to_upgrade.character,
         upgrades=character_to_upgrade.upgrades,
         materials=character_to_upgrade.materials
-    )|safe }}
-{% endfor %}
+        )|safe }}
+        {% endfor %}
+    </div>
+</div>

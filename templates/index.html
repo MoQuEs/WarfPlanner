@@ -1,10 +1,8 @@
-<!DOCTYPE html>
-<html lang="en">
-
+<!doctype html>
+<html lang="en" class="{{ config.theme() }}">
 <head>
-
-    <meta charset="UTF-8">
-    <meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1, maximum-scale=1">
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1, maximum-scale=1"/>
 
     <title>{{ i18t('Title') }}</title>
 
@@ -12,6 +10,7 @@
     <script src="/static/js/libs/popperjs.min.js"></script>
     <script src="/static/js/libs/tippy.min.js"></script>
     <script src="/static/js/libs/htmx.min.js"></script>
+    <script src="/static/js/libs/idiomorph-ext.min.js"></script>
     <script src="/static/js/libs/tailwind.min.js"></script>
     <script src="/static/js/libs/flowbite.min.js"></script>
     <script src="/static/js/index.js"></script>
@@ -22,7 +21,6 @@
 
     <link rel="stylesheet" href="/static/css/libs/bootstrap-icons.min.css"/>
     <link rel="stylesheet" href="/static/css/libs/tippy.min.css"/>
-    <link rel="stylesheet" href="/static/css/libs/flowbite.min.css"/>
     <link rel="stylesheet" href="/static/css/index.css"/>
 
     <style type="text/tailwindcss">
@@ -30,129 +28,122 @@
     </style>
 
     <script>
+        {% if is_dev %}
+        //htmx.logAll();
+        {% endif %}
+
         htmx.onLoad(function(content) {
-            initFlowbite();
-        })
+            //initFlowbite();
+        });
     </script>
 </head>
 
-<body class="bg-slate-200 text-slate-900 dark:bg-slate-900 dark:text-slate-200 h-full max-h-full w-full max-w-full p-5 flex flex-col gap-5">
+<body class="h-full max-h-full w-full max-w-full bg-slate-200 text-slate-900 dark:bg-slate-900 dark:text-slate-200">
 
-<div class="flex flex-row justify-center gap-3">
-    <div class="flex flex-row flex-wrap gap-3">
-        {% if is_dev %}
-        <button type="button" class="btn btn-red" onclick="reload()">
-            {{ i18t('button.reload') }}
-        </button>
-        {% endif %}
+<button data-drawer-target="main-menu-sidebar"
+        data-drawer-toggle="main-menu-sidebar"
+        aria-controls="main-menu-sidebar"
+        type="button"
+        class="fixed m-4 rounded-lg border border-sky-200 bg-white px-2 pb-1 text-sky-500 shadow dark:bg-sky-800 dark:border-sky-700 lg:hidden hover:bg-sky-100 focus:outline-none focus:ring-2 focus:ring-sky-200 dark:text-sky-400 dark:hover:bg-sky-700 dark:focus:ring-sky-600">
+    <span class="sr-only">{{ i18t('open_sidebar') }}</span>
+    <i class="text-3xl bi bi-list"></i>
+</button>
+
+<aside id="main-menu-sidebar"
+       class="fixed top-0 left-0 z-40 h-screen w-64 -translate-x-full gap-5 transition-transform md:translate-x-0 h-full overflow-y-auto bg-gray-50 p-4 dark:bg-gray-800"
+       aria-label="Sidebar">
+    <div class="flex flex-row gap-4 items-center">
+        <img src="/static/images/site/logo.png" alt="Logo" class="w-10">
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ i18t('title') }}</h1>
     </div>
 
-    <div class="flex flex-row flex-wrap gap-3">
-        {% if is_dev %}
-        <button type="button" class="flex grow btn btn-light click_on_load" onclick="load_upgrades()">
-            {{ i18t('button.load_characters') }}
-        </button>
-        {% endif %}
-        <button data-dropdown-toggle="add_character"
-                data-dropdown-placement="bottom"
-                class="btn btn-blue text-center inline-flex grow justify-between gap-3"
-                type="button"
-                onclick="load_characters()">
-            <span>{{ i18t('button.add_character') }}</span>
-            <i class="bi bi-caret-down"></i>
-        </button>
-    </div>
+    <ul class="font-medium mt-4"
+        id="main-menu"
+        data-tabs-toggle="#main-menu-content"
+        role="tablist"
+    >
+        {{ template(
+            'components/menu_item',
+            ele_id='upgrades',
+            icon_id='bi-people',
+            text_id='menu.upgrades'
+        )|safe }}
+        {{ template(
+            'components/menu_item',
+            ele_id='materials',
+            icon_id='bi-bar-chart-steps',
+            text_id='menu.materials'
+        )|safe }}
+        {{ template(
+            'components/menu_item',
+            ele_id='import_export',
+            icon_id='bi-floppy',
+            text_id='menu.import_export'
+        )|safe }}
+        {{ template(
+            'components/menu_item',
+            ele_id='settings',
+            icon_id='bi-sliders2',
+            text_id='menu.settings')|safe }}
+        {{ template(
+            'components/menu_item',
+            ele_id='about',
+            icon_id='bi-info-circle',
+            text_id='menu.about'
+        )|safe }}
+    </ul>
 
-    <div class="flex flex-row flex-wrap gap-3">
-        {% if is_dev %}
-        <button type="button" class="flex grow btn btn-light click_on_load" onclick="load_materials()">
-            {{ i18t('button.load_materials') }}
-        </button>
-        {% endif %}
-        <button type="button" class="flex grow btn btn-purple">
-            {{ i18t('button.import_export_inventory') }}
-        </button>
-        <button type="button" class="flex grow btn btn-purple">
-            {{ i18t('button.import_inventory_from_game') }}
-        </button>
-    </div>
-</div>
+    <button id="reload"
+            type="button"
+            class="btn btn-red mt-4 w-full"
+            hx-post="/reload"
+            hx-target="#reload"
+            hx-swap="none"
+            hx-on--after-request="location.reload(true)">
+        <i class="bi bi-arrow-repeat"></i>
+        {{ i18t('button.reload') }}
+    </button>
+</aside>
 
-<div class="flex flex-col-reverse tablet:flex-row flex-nowrap grow gap-5">
-    <div id="upgrades" class="flex flex-col gap-5">
-    </div>
-
-    <div id="materials" class="flex flex-col gap-5">
-    </div>
-</div>
-
-<div class="hidden">
-    <input id="reload"
-           data-loaded="false"
-           class="click_on_load"
-           type="button"
-           hx-get="/reload"
-           hx-target="#reload"
-           hx-history="false"/>
-    <input id="load_materials"
-           data-loaded="false"
-           class="click_on_load"
-           type="button"
-           hx-get="/materials"
-           hx-target="#materials"
-           hx-history="false"/>
-    <input id="load_upgrades"
-           data-loaded="false"
-           class="click_on_load"
-           type="button"
-           hx-get="/upgrades"
-           hx-target="#upgrades"
-           hx-history="false"/>
-    <input id="load_characters"
-           data-loaded="false"
-           class="click_on_load"
-           type="button"
-           hx-get="/characters"
-           hx-target="#characters"
-           hx-history="false"/>
-</div>
-
-<div id="add_character" class="z-10 hidden bg-white rounded-lg shadow w-96 dark:bg-gray-700">
-    <div class="p-3">
-        <label for="search_characters_input" class="sr-only">Search</label>
-        <div class="relative">
-            <div class="absolute inset-y-0 rtl:inset-r-0 start-0 flex items-center ps-3 pointer-events-none">
-                <svg class="w-4 h-4 text-gray-500 dark:text-gray-400" aria-hidden="true"
-                     xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
-                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"/>
-                </svg>
-            </div>
-            <input type="search"
-                   id="search_characters_input"
-                   class="block w-full p-2 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                   placeholder="{{ i18t('placeholder.search_character') }}"
-                   oninput="filter_characters()">
+<div class="p-4 md:pt-4 md:ml-64">
+    <div id="main-menu-content">
+        <div class="hidden"
+             id="upgrades"
+             role="tabpanel"
+             aria-labelledby="upgrades-tab"
+        >
+            {{ template('upgrades', characters_to_upgrade=upgrades)|safe }}
+        </div>
+        <div class="hidden"
+             id="materials"
+             role="tabpanel"
+             aria-labelledby="materials-tab"
+        >
+        </div>
+        <div class="hidden"
+             id="import_export"
+             role="tabpanel"
+             aria-labelledby="import_export-tab"
+        >
+        </div>
+        <div class="hidden"
+             id="settings"
+             role="tabpanel"
+             aria-labelledby="settings-tab"
+        >
+        </div>
+        <div class="hidden"
+             id="about"
+             role="tabpanel"
+             aria-labelledby="about-tab"
+        >
         </div>
     </div>
-
-    <div id="characters">
-    </div>
-
-    <div class="flex items-center p-3 text-sm font-medium text-red-600 border-t border-gray-200 rounded-b-lg bg-gray-50 dark:border-gray-600 hover:bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-red-500">
-        <input id="show_only_non_global_characters"
-               type="checkbox"
-               class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-700 dark:focus:ring-offset-gray-700 focus:ring-2 dark:bg-gray-600 dark:border-gray-500"
-               onchange="filter_characters()">
-        <label for="show_only_non_global_characters"
-               class="w-full py-2 ms-2 text-sm font-medium text-gray-900 rounded dark:text-gray-300">
-            {{ i18t('button.show_only_non_global_characters') }}
-        </label>
-    </div>
 </div>
+
+{{ template('characters_dropdown', characters=characters)|safe }}
 
 <script src="/static/js/events.js"></script>
 <script src="/static/js/startup.js"></script>
-
 </body>
 </html>

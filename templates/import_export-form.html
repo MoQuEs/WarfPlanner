@@ -1,0 +1,51 @@
+<div class="flex flex-col card-smp gap-4 import_export">
+    <p class="font-bold text-blue-500 dark:text-blue-400">
+        <a href="{{ link }}"
+           title="{{ title }}"
+           target="_blank"
+           rel="noopener noreferrer"
+        >
+            {{ title }}
+        </a>
+    </p>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <form class="flex flex-col gap-4">
+            {{ template(
+                'components/textarea',
+                textarea_id="%s-export" % import_export_name,
+                textarea_name=import_export_name,
+                textarea_rows=10,
+                textarea_value=arknights.export_from(import_export_name),
+                label=i18t('import_export.export')
+            )|safe }}
+            <button id="{{ import_export_name }}-export-button"
+                    type="button"
+                    class="btn btn-green w-full"
+                    onclick="copy_text_from_element(this, '.table', '.prompt')"
+            >
+                <i class="bi bi-floppy"></i>
+                {{ i18t('import_export.copy_export_data') }}
+            </button>
+        </form>
+        <form class="flex flex-col gap-4">
+            {{ template(
+                'components/textarea',
+                textarea_id="%s-import" % import_export_name,
+                textarea_name=import_export_name,
+                textarea_rows=10,
+                textarea_value=i18t('import_export.import_data'),
+                label=i18t('import_export.import')
+            )|safe }}
+            <button id="{{ import_export_name }}-import-button"
+                    type="button"
+                    class="btn btn-green w-full"
+                    hx-post="/import/{{ import_export_name }}"
+                    hx-target="closest .import_export"
+                    hx-swap="outerHTML">
+                <i class="bi bi-floppy"></i>
+                {{ i18t('import_export.import') }}
+            </button>
+        </form>
+    </div>
+</div>

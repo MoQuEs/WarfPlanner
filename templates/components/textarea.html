@@ -1,0 +1,27 @@
+<div class="flex flex-col" id="{{ select_id }}-container">
+    <label for="{{ textarea_id }}"
+           class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+        {{ label }}:
+
+        {% if len(tooltip) > 0 %}
+        <br/>
+        <span id="{{ select_id }}-tooltip" class="text-xs text-gray-500 dark:text-gray-400">
+            {{ tooltip }}
+        </span>
+        {% endif %}
+    </label>
+    <textarea id="{{ textarea_id }}"
+              name="{{ textarea_name }}"
+              rows="{{ textarea_rows }}"
+              class="block p-2.5 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+              placeholder="{{ textarea_placeholder }}"
+              {% if props %}
+              {% for key, value in props.items() %}
+                {{ key }}="{{ value }}"
+              {% endfor %}
+              {% endif %}
+              {% if required %}required{% endif %}
+              {% if disabled %}disabled{% endif %}
+              {% if readonly %}readonly{% endif %}
+    >{{ textarea_value }}</textarea>
+</div>

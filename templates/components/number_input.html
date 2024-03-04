@@ -1,16 +1,54 @@
-<div class="flex items-center">
-    <button type="button"
-            data-input-counter-decrement="{{ input_id }}"
-            class="bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-600 dark:border-gray-600 hover:bg-gray-200 border border-gray-300 rounded-s-lg focus:ring-gray-100 dark:focus:ring-gray-700 focus:ring-2 focus:outline-none h-8 w-8">
-        <i class="bi bi-dash-lg"></i>
-    </button>
-    <input type="text" id="{{ input_id }}" name="{{ input_name }}"
-           data-input-counter data-input-counter-min="{{ input_min }}" data-input-counter-max="{{ input_max }}"
-           class="w-16 h-8 bg-gray-50 border-x-0 border-gray-300 font-medium text-center text-gray-900 text-sm focus:ring-blue-500 focus:border-blue-500 block dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-           placeholder="" value="{{ input_value }}" required>
-    <button type="button"
-            data-input-counter-increment="{{ input_id }}"
-            class="bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-600 dark:border-gray-600 hover:bg-gray-200 border border-gray-300 rounded-e-lg focus:ring-gray-100 dark:focus:ring-gray-700 focus:ring-2 focus:outline-none h-8 w-8">
-        <i class="bi bi-plus-lg"></i>
-    </button>
+<div class="flex flex-col">
+    {% if len(label) > 0 %}
+    <label for="{{ input_id }}" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+        {{ label }}:
+
+        {% if len(tooltip) > 0 %}
+        <br/>
+        <span id="{{ input_id }}-tooltip" class="text-xs text-gray-500 dark:text-gray-400">
+            {{ tooltip }}
+        </span>
+        {% endif %}
+    </label>
+    {% endif %}
+    <div class="flex items-center">
+        <button
+                type="button"
+                id="{{ input_id }}-decrement"
+                class="h-8 w-8 min-w-8 border border-gray-300 bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-600 dark:border-gray-600 hover:bg-gray-200 rounded-s-lg focus:ring-gray-100 dark:focus:ring-gray-700 focus:ring-2 focus:outline-none"
+                {% if readonly or disabled %}disabled{% endif %}
+        >
+            <i class="bi bi-dash-lg"></i>
+        </button>
+        <input
+                type="text"
+                id="{{ input_id }}"
+                name="{{ input_name }}"
+                class="{% if input_classes %}{{input_classes}}{% endif %} block h-8 w-full min-w-8 border-x-0 border-gray-300 bg-gray-50 text-center text-sm font-medium text-gray-900 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                value="{{ input_value }}"
+                placeholder="{{ input_placeholder }}"
+                {% if input_min %}data-min="{{ input_min }}" {% endif %}
+                {% if input_max %}data-max="{{ input_max }}" {% endif %}
+                {% if props %}
+                {% for key, value in props.items() %}
+                    {{ key }}="{{ value }}"
+                {% endfor %}
+                {% endif %}
+                {% if required %}required{% endif %}
+                {% if readonly %}readonly{% endif %}
+                {% if disabled %}disabled{% endif %}
+        />
+        <button
+                type="button"
+                id="{{ input_id }}-increment"
+                class="h-8 w-8 min-w-8 border border-gray-300 bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-600 dark:border-gray-600 hover:bg-gray-200 rounded-e-lg focus:ring-gray-100 dark:focus:ring-gray-700 focus:ring-2 focus:outline-none"
+                {% if readonly or disabled %}disabled{% endif %}
+        >
+            <i class="bi bi-plus-lg"></i>
+        </button>
+    </div>
 </div>
+
+<script>
+    initFlowbiteInputCounter("{{ input_id }}");
+</script>

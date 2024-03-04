@@ -1,0 +1,23 @@
+<li role="presentation"
+    onclick="load_{{ ele_id }}()"
+>
+    <a href="#"
+       class="flex items-center rounded-lg p-2 text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 aria-selected-blue group"
+       id="{{ ele_id }}-menu"
+       data-tabs-target="#{{ ele_id }}"
+       role="tab"
+       aria-controls="{{ ele_id }}"
+       aria-selected="false"
+    >
+        <i class="bi {{ icon_id }}"></i>
+        <span class="flex-1 whitespace-nowrap ms-3">{{ i18t(text_id) }}</span>
+    </a>
+
+    <input id="load_{{ ele_id }}"
+           class="hidden"
+           data-loaded="false"
+           type="button"
+           hx-get="/{{ ele_id }}"
+           hx-target="#{{ ele_id }}"
+    />
+</li>
