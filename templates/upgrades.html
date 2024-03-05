@@ -9,11 +9,9 @@
             {{ i18t('button.load_characters') }}
         </button>
         {% endif %}
-        <button data-dropdown-toggle="add_character"
-                data-dropdown-placement="bottom"
-                class="inline-flex grow justify-between gap-3 text-center btn btn-blue"
+        <button id="characters-dropdown-button"
+                class="flex grow justify-between gap-4 text-center btn btn-blue"
                 type="button"
-                onclick="load_characters()"
         >
             <span>
                 <i class="bi bi-plus-circle pr-1"></i>
@@ -26,11 +24,17 @@
     <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
         {% for character_to_upgrade in characters_to_upgrade %}
         {{ template(
-        'upgrade',
-        character=character_to_upgrade.character,
-        upgrades=character_to_upgrade.upgrades,
-        materials=character_to_upgrade.materials
+            'upgrade',
+            character=character_to_upgrade.character,
+            upgrades=character_to_upgrade.upgrades,
+            materials=character_to_upgrade.materials
         )|safe }}
         {% endfor %}
     </div>
 </div>
+
+{{ template('characters_dropdown', characters=characters)|safe }}
+
+<script>
+    initFlowbiteDropdownMenu('characters-dropdown', 'characters-dropdown-button');
+</script>

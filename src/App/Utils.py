@@ -8,6 +8,8 @@ from shutil import rmtree
 from socket import socket
 from string import ascii_letters, digits
 from typing import Any, Callable
+
+from flask import current_app
 from requests import get
 from atexit import register
 from .ThreadPool import ThreadPool
@@ -100,6 +102,10 @@ def css_dir(*paths: str) -> str:
     return static_dir("css", *paths)
 
 
+def fonts_dir(*paths: str) -> str:
+    return static_dir("fonts", *paths)
+
+
 def images_dir(*paths: str) -> str:
     return static_dir("images", *paths)
 
@@ -180,11 +186,11 @@ def download_file(url: str, path: str, **kwargs: bool) -> ThreadPool:
             mkdir_from_file(path)
             response = get(url, allow_redirects=True)
             if response.status_code >= 500:
-                print("Error downloading %s\n" % url)
+                current_app.logger.error("Error downloading %s\n" % url)
                 return
 
             if response.status_code >= 400:
-                print("Can't downloading %s\n" % url)
+                current_app.logger.error("Can't downloading %s\n" % url)
                 return
 
             with open(path, "wb") as handler:

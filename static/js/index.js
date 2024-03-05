@@ -67,18 +67,6 @@ function load_about() {
     document.getElementById('load_about').click();
 }
 
-function load_characters(force = false) {
-    let load_characters = document.getElementById('load_characters');
-    if (force || load_characters.dataset.loaded === 'false') {
-        load_characters.dataset.loaded = 'true';
-        load_characters.click();
-    }
-}
-
-function reset_load_characters() {
-    load_characters.dataset.loaded = 'false';
-}
-
 function filter_characters() {
     const search_characters_input = document.getElementById('search_characters_input').value.trim();
     const show_cn_only_characters = document.getElementById('show_cn_only_characters').checked;
@@ -120,11 +108,13 @@ function remove_selection_from_character_list(cid) {
  */
 function initFlowbiteInputCounter(id) {
     const $targetEl = document.getElementById(`${id}`);
+    const $incrementEl = document.getElementById(`${id}-increment`);
+    const $decrementEl = document.getElementById(`${id}-decrement`);
 
     return new InputCounter(
         $targetEl,
-        document.getElementById(`${id}-increment`),
-        document.getElementById(`${id}-decrement`),
+        $incrementEl,
+        $decrementEl,
         {
             minValue: $targetEl.dataset.min,
             maxValue: $targetEl.dataset.max,
@@ -168,6 +158,38 @@ function initFlowbiteTooltip(id, id_tooltip) {
     );
 }
 
+/**
+ * @param {string} id_menu
+ * @param {string} id_button
+ * @returns {DropdownInterface}
+ */
+function initFlowbiteDropdownMenu(id, id_button) {
+    const $targetEl = document.getElementById(id);
+    const $triggerEl = document.getElementById(id_button);
+
+    return new Dropdown(
+        $targetEl,
+        $triggerEl,
+        {
+            placement: 'bottom',
+            triggerType: 'click',
+            offsetSkidding: 0,
+            offsetDistance: 10,
+            delay: 300,
+            onHide: () => {
+            },
+            onShow: () => {
+            },
+            onToggle: () => {
+            },
+        },
+        {
+          id: `DropdownMenu-${id}`,
+          override: true
+        }
+    );
+}
+
 function change_theme() {
     const $theme = document.getElementById('theme').value;
     if ($theme === 'light') {
@@ -177,4 +199,19 @@ function change_theme() {
         document.querySelector('html').classList.remove('light');
         document.querySelector('html').classList.add('dark');
     }
+}
+
+/**
+ * @param {HTMLElement} self
+ * @param {string} closest
+ * @param {string} find
+ */
+function copy_text_from_element(find) {
+    const $element = document.querySelector(find);
+    add_to_clipboard($element.textContent.trim());
+}
+
+/** @param {string} text */
+function add_to_clipboard(text) {
+    navigator.clipboard.writeText(text);
 }

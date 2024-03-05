@@ -22,9 +22,9 @@
             <button id="{{ import_export_name }}-export-button"
                     type="button"
                     class="btn btn-green w-full"
-                    onclick="copy_text_from_element(this, '.table', '.prompt')"
+                    onclick="copy_text_from_element('{{ "#%s-export" % import_export_name }}')"
             >
-                <i class="bi bi-floppy"></i>
+                <i class="bi bi-copy"></i>
                 {{ i18t('import_export.copy_export_data') }}
             </button>
         </form>

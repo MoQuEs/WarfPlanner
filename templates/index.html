@@ -6,26 +6,25 @@
 
     <title>{{ i18t('Title') }}</title>
 
-    <script src="/static/js/libs/jquery.min.js"></script>
-    <script src="/static/js/libs/popperjs.min.js"></script>
-    <script src="/static/js/libs/tippy.min.js"></script>
-    <script src="/static/js/libs/htmx.min.js"></script>
-    <script src="/static/js/libs/idiomorph-ext.min.js"></script>
-    <script src="/static/js/libs/tailwind.min.js"></script>
-    <script src="/static/js/libs/flowbite.min.js"></script>
-    <script src="/static/js/index.js"></script>
+    <script>{{ get_file_content(js_dir("libs", "jquery.min.js"))|safe }}</script>
+    <script>{{ get_file_content(js_dir("libs", "popperjs.min.js"))|safe }}</script>
+    <script>{{ get_file_content(js_dir("libs", "toastify-js.min.js"))|safe }}</script>
+    <script>{{ get_file_content(js_dir("libs", "tippy.min.js"))|safe }}</script>
+    <script>{{ get_file_content(js_dir("libs", "htmx.min.js"))|safe }}</script>
+    <script>{{ get_file_content(js_dir("libs", "idiomorph-ext.min.js"))|safe }}</script>
+    <script>{{ get_file_content(js_dir("libs", "tailwind.min.js"))|safe }}</script>
+    <script>{{ get_file_content(js_dir("libs", "flowbite.min.js"))|safe }}</script>
+    <script>{{ get_file_content(js_dir("index.js"))|safe }}</script>
 
-    <script>
-        {{ tailwind_js|safe }}
-    </script>
+    <script>{{ get_file_content(js_dir("tailwind.js"))|safe }}</script>
 
-    <link rel="stylesheet" href="/static/css/libs/bootstrap-icons.min.css"/>
-    <link rel="stylesheet" href="/static/css/libs/tippy.min.css"/>
-    <link rel="stylesheet" href="/static/css/index.css"/>
 
-    <style type="text/tailwindcss">
-        {{ tailwind_css|safe }}
-    </style>
+    <style>{{ get_file_content(css_dir("libs", "bootstrap-icons.min.css"))|safe }}</style>
+    <style>{{ get_file_content(css_dir("libs", "toastify-js.min.css"))|safe }}</style>
+    <style>{{ get_file_content(css_dir("libs", "tippy.min.css"))|safe }}</style>
+    <style>{{ get_file_content(css_dir("index.css"))|safe }}</style>
+
+    <style type="text/tailwindcss">{{ get_file_content(css_dir("tailwind.css"))|safe }}</style>
 
     <script>
         {% if is_dev %}
@@ -93,15 +92,26 @@
         )|safe }}
     </ul>
 
-    <button id="reload"
+    <button id="reload_app"
             type="button"
             class="btn btn-red mt-4 w-full"
-            hx-post="/reload"
-            hx-target="#reload"
+            hx-post="/reload_app"
+            hx-target="#reload_app"
             hx-swap="none"
             hx-on--after-request="location.reload(true)">
         <i class="bi bi-arrow-repeat"></i>
-        {{ i18t('button.reload') }}
+        {{ i18t('button.reload_app') }}
+    </button>
+
+    <button id="download_arknights_data"
+            type="button"
+            class="btn btn-red mt-4 w-full"
+            hx-post="/download_arknights_data"
+            hx-target="#download_arknights_data"
+            hx-swap="none"
+            hx-on--after-request="location.reload(true)">
+        <i class="bi bi-arrow-repeat"></i>
+        {{ i18t('button.download_arknights_data') }}
     </button>
 </aside>
 
@@ -112,7 +122,7 @@
              role="tabpanel"
              aria-labelledby="upgrades-tab"
         >
-            {{ template('upgrades', characters_to_upgrade=upgrades)|safe }}
+            {{ template('upgrades', characters_to_upgrade=upgrades, characters=characters)|safe }}
         </div>
         <div class="hidden"
              id="materials"
@@ -141,9 +151,7 @@
     </div>
 </div>
 
-{{ template('characters_dropdown', characters=characters)|safe }}
-
-<script src="/static/js/events.js"></script>
-<script src="/static/js/startup.js"></script>
+<script>{{ get_file_content(js_dir("events.js"))|safe }}</script>
+<script>{{ get_file_content(js_dir("startup.js"))|safe }}</script>
 </body>
 </html>

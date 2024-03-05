@@ -617,9 +617,6 @@ class Save(SaveLoad):
     def save(self) -> None:
         self.to_file(Save, save_file())
 
-    def get_upgrades_for_character(self, cid: str) -> CharacterUpgrades:
-        return self.upgrades[cid] if cid in self.upgrades else CharacterUpgrades()
-
 
 @dataclass
 class Language(SaveLoad):

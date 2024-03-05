@@ -12,7 +12,8 @@
         "about": "About"
       },
       "button": {
-        "reload": "Reload",
+        "reload_app": "Reload app",
+        "download_arknights_data": "Download arknights data",
         "load_materials": "Load materials",
         "edit_materials": "Edit materials",
         "load_characters": "Load characters",
@@ -122,7 +123,7 @@
         "import": "Import",
         "export": "Export",
         "import_data": "Import data...",
-        "copy_export_data": "copy export data...",
+        "copy_export_data": "Copy export data",
         "penguin-statistics": "Penguin Statistics",
         "penguin-statistics-url": "https://penguin-stats.io/planner",
         "gamepress": "Game Press",

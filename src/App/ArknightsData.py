@@ -3,9 +3,11 @@ from os.path import join
 from re import match
 from typing import Any
 
-from App.Config import Config
+from flask import current_app
 
-from App.Types import (
+from .Config import Config
+
+from .Types import (
     Arknights,
     Module,
     Material,
@@ -17,7 +19,7 @@ from App.Types import (
     Upgrade,
 )
 
-from App.Utils import (
+from .Utils import (
     download_file,
     arknights_dir,
     download_file_pool,
@@ -29,10 +31,10 @@ from App.Utils import (
 )
 
 
-def main() -> None:
-    config = Config()
+def arknights_data_generator(config: Config, arknights: Arknights) -> Arknights:
 
-    print("Downloading Arknights data...")
+    current_app.logger.info("Downloading Arknights data...")
+
     for repository, lang in [
         ("ArknightsGameData", "zh_CN"),
         ("ArknightsGameData_YoStar", "en_US"),
@@ -63,9 +65,8 @@ def main() -> None:
 
     download_file_pool.join()
 
-    print("Generating Arknights data...")
+    current_app.logger.info("Generating Arknights data...")
 
-    arknights = Arknights()
     excel_glob_path = arknights_dir("json", "**")
     not_obtainable_exemption = ["char_512_aprot"]
 
@@ -142,7 +143,8 @@ def main() -> None:
     for path in glob(join(excel_glob_path, "skill_table.json")):
         langId = match(r".*[\\\/]+([^\\\/]+)[\\\/]+skill_table.*", path).group(1)
 
-        print("Processing %s %s" % (path, langId))
+        current_app.logger.info("Processing %s %s" % (path, langId))
+
         full_json = get_json_file_content(path)
         for key, value in full_json.items():
             name = value["levels"][0]["name"]
@@ -159,7 +161,8 @@ def main() -> None:
     for path in glob(join(excel_glob_path, "uniequip_table.json")):
         langId = match(r".*[\\\/]+([^\\\/]+)[\\\/]+uniequip_table.*", path).group(1)
 
-        print("Processing %s %s" % (path, langId))
+        current_app.logger.info("Processing %s %s" % (path, langId))
+
         full_json = get_json_file_content(path)
         for key, value in full_json["equipDict"].items():
             if value["type"] == "INITIAL":
@@ -186,7 +189,8 @@ def main() -> None:
         for path in glob(join(excel_glob_path, "character_table.json")):
             langId = match(r".*[\\\/]+([^\\\/]+)[\\\/]+character_table.*", path).group(1)
 
-            print("Processing %s %s" % (path, langId))
+            current_app.logger.info("Processing %s %s" % (path, langId))
+
             full_json = get_json_file_content(path)
             if "patchChars" in full_json:
                 full_json = full_json["patchChars"]
@@ -226,7 +230,8 @@ def main() -> None:
     for path in glob(join(excel_glob_path, "building_data.json")):
         langId = match(r".*[\\\/]+([^\\\/]+)[\\\/]+building_data.*", path).group(1)
 
-        print("Processing %s %s" % (path, langId))
+        current_app.logger.info("Processing %s %s" % (path, langId))
+
         full_json = get_json_file_content(path)
         for _, value in full_json["workshopFormulas"].items():
             costs = value["costs"]
@@ -239,7 +244,8 @@ def main() -> None:
     for path in glob(join(excel_glob_path, "item_table.json")):
         langId = match(r".*[\\\/]+([^\\\/]+)[\\\/]+item_table.*", path).group(1)
 
-        print("Processing %s %s" % (path, lang))
+        current_app.logger.info("Processing %s %s" % (path, lang))
+
         full_json = get_json_file_content(path)
         for key, value in full_json["items"].items():
             if not key.isnumeric() and key not in [
@@ -269,7 +275,8 @@ def main() -> None:
     for path in glob(join(excel_glob_path, "gamedata_const.json")):
         langId = match(r".*[\\\/]+([^\\\/]+)[\\\/]+gamedata_const.*", path).group(1)
 
-        print("Processing %s %s" % (path, langId))
+        current_app.logger.info("Processing %s %s" % (path, langId))
+
         full_json = get_json_file_content(path)
         arknights.upgrade_max_lv_phases = UpgradeMaxLvPhases.from_game_data(full_json)
         arknights.upgrade_gold_cost = UpgradeGoldCost.from_game_data(full_json)
@@ -279,6 +286,4 @@ def main() -> None:
     # Output
     arknights.save()
 
-
-if __name__ == "__main__":
-    main()
+    return arknights

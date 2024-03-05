@@ -1,5 +1,5 @@
 tailwind.config = {
-    darkMode: 'class',
+  darkMode: 'class',
   theme: {
     screens: {
       'sm': '768px',

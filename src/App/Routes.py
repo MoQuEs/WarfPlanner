@@ -2,9 +2,11 @@ import re
 from http import HTTPStatus
 from pprint import pprint
 from typing import NamedTuple, TypeAlias
-from flask import Blueprint, redirect, Response, current_app, request
+from flask import Blueprint, redirect, Response, current_app, request, send_file
+
+from .ArknightsData import arknights_data_generator
 from .Init import arknights, save, template, reload_init, config
-from .Utils import add_upgrade_material, clamp
+from .Utils import add_upgrade_material, clamp, fonts_dir
 from .Types import CharacterUpgrades, CharacterUpgrade, Character, Material
 
 main_routes_blueprint: Blueprint = Blueprint("main", "main")
@@ -21,7 +23,7 @@ class CharactersToUpgrade(NamedTuple):
 
 @main_routes_blueprint.get("/")
 def index_route() -> str | Response:
-    return template("index", characters=characters(), upgrades=upgrades(), materials=materials())
+    return template("index", upgrades=upgrades(), characters=characters())
 
 
 @main_routes_blueprint.get("/favicon.ico")
@@ -29,8 +31,13 @@ def favicon_route() -> str | Response:
     return redirect("/static/images/site/favicon.ico", code=HTTPStatus.MOVED_PERMANENTLY)
 
 
-@main_routes_blueprint.post("/reload")
-def reload_route() -> str | Response:
+@main_routes_blueprint.get("/fonts/<path:font>")
+def font_route(font: str) -> str | Response:
+    return send_file(fonts_dir(font))
+
+
+@main_routes_blueprint.post("/reload_app")
+def reload_app_route() -> str | Response:
     current_app.logger.info("Reloading")
 
     reload_init()
@@ -38,11 +45,13 @@ def reload_route() -> str | Response:
     return Response(status=HTTPStatus.OK)
 
 
-@main_routes_blueprint.get("/characters")
-def characters_route() -> str | Response:
-    current_app.logger.info("Showing characters")
+@main_routes_blueprint.post("/download_arknights_data")
+def download_arknights_data_route() -> str | Response:
+    current_app.logger.info("Download arknights data")
 
-    return template("characters", characters=characters())
+    arknights_data_generator(config, arknights)
+
+    return Response(status=HTTPStatus.OK)
 
 
 def characters() -> list[Character]:
@@ -139,7 +148,7 @@ def material_update_route(mid: str) -> str | Response:
 @main_routes_blueprint.get("/upgrades")
 def upgrades_route() -> str | Response:
     current_app.logger.info("Showing upgrades")
-    return template("upgrades", characters_to_upgrade=upgrades())
+    return template("upgrades", characters_to_upgrade=upgrades(), characters=characters())
 
 
 def upgrades() -> list[CharactersToUpgrade]:
