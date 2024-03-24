@@ -21,7 +21,7 @@
         </button>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
+    <div id="upgrades_characters" class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
         {% for character_to_upgrade in characters_to_upgrade %}
         {{ template(
             'upgrade',

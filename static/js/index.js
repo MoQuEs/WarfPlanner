@@ -213,5 +213,36 @@ function copy_text_from_element(find) {
 
 /** @param {string} text */
 function add_to_clipboard(text) {
-    navigator.clipboard.writeText(text);
+    navigator.clipboard.writeText(text).then(() => success_toast("Copied"));
+}
+
+/**
+ * @param {string} text
+ * @param {string} background_class
+ * @param {CallableFunction} onClick
+ */
+function toast(text, background_class, onClick = () => {}) {
+    Toastify({
+        text: text,
+        duration: 3000,
+        close: false,
+        gravity: "bottom",
+        position: "right",
+        stopOnFocus: true,
+        className: background_class,
+        style: {
+            background: "none"
+        },
+        onClick: onClick
+    }).showToast();
+}
+
+/** @param {string} text */
+function success_toast(text) {
+    toast(text, "bg-success");
+}
+
+/** @param {string} text */
+function error_toast(text) {
+    toast(text, "bg-error");
 }

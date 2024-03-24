@@ -24,7 +24,7 @@
                 data-type="character_list"
                 data-cn_only="{% if character.cn_only %}1{% else %}0{% endif %}"
                 hx-put="/upgrade/{{ character.id }}"
-                hx-target="#upgrades"
+                hx-target="#upgrades_characters"
                 hx-swap="beforeend"
                 hx-on--after-request="add_selection_from_character_list('{{ character.id }}')"
             >

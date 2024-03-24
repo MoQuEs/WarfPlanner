@@ -16,14 +16,15 @@
         {% for group_name, group in section.items() %}
         <div class="flex flex-col flex-wrap card-smp">
             <p>{{ i18t(group_name) }}</p>
-            <div class="flex flex-row flex-nowrap gap-2">
+            <div class="flex flex-row flex-wrap place-content-around gap-2">
                 {% for material_name, material in group.items() %}
                 {{ template(
                     'material',
                     material=material.material,
                     have=material.have,
                     need=material.need,
-                    show_input=True
+                    show_input=True,
+                    show_craft=arknights.can_craft_material(material.material.id)
                 )|safe}}
                 {% endfor %}
             </div>

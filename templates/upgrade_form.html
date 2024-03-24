@@ -5,12 +5,12 @@
 >
     <div class="flex flex-row gap-4">
         <div class="flex flex-col gap-2">
-            <span class="text-nowrap">{{ character.get_name(language) }}</span>
+            <span class="w-auto max-w-36 min-w-16 font-bold">{{ character.get_name(language) }}</span>
 
             <img src="/static/images/avatars/{{ character.id }}.png"
                  title="{{ character.get_name(language) }}"
                  alt="{{ character.get_name(language) }}"
-                 class="h-auto max-h-32 w-auto max-w-32 min-w-16 min-h-16"
+                 class="h-auto w-auto min-w-16 max-w-36"
                  loading="lazy"
             />
 
@@ -34,8 +34,8 @@
             </div>
         </div>
 
-        <div class="flex flex-row flex-grow flex-wrap gap-4">
-            <div class="flex flex-col flex-nowrap gap-1">
+        <div class="flex flex-row grow shrink flex-wrap gap-4">
+            <div class="flex flex-col flex-wrap grow shrink gap-1">
                 <span>{{ i18t('label.elite') }}:</span>
                 <div class="flex flex-row flex-nowrap gap-2">
                     {{ template(
@@ -58,7 +58,7 @@
                 </div>
 
                 <span>{{ i18t('label.level') }}:</span>
-                <div class="flex flex-row flex-nowrap gap-2">
+                <div class="flex flex-row flex-nowrap grow shrink  gap-2">
                     {{ template(
                     'components/number_input',
                     input_id="level_from-%s" %
@@ -80,7 +80,7 @@
                 </div>
 
                 <span>{{ i18t('label.all_skills') }}:</span>
-                <div class="flex flex-row flex-nowrap gap-2">
+                <div class="flex flex-row flex-nowrap grow shrink  gap-2">
                     {{ template(
                     'components/number_input',
                     input_id="all_skil_lvlup_from-%s" % character.id,
@@ -102,12 +102,12 @@
             </div>
 
             {% if character.has_skills() %}
-            <div class="flex flex-col gap-1">
+            <div class="flex flex-col flex-wrap grow shrink  gap-1">
                 <span>{{ i18t('label.skills') }}:</span>
-                <div class="flex flex-col flex-nowrap gap-1">
+                <div class="flex flex-col flex-nowrap grow shrink  gap-1">
                     {% for sid, skill in character.get_skills().items() %}
                     <span class="whitespace-nowrap text-nowrap">{{ skill.get_name(language) }}:</span>
-                    <div class="flex flex-row flex-nowrap gap-2">
+                    <div class="flex flex-row flex-nowrap grow shrink  gap-2">
                         {{ template(
                         'components/number_input',
                         input_id="skill-%s-%s-from" % (character.id, sid),
@@ -130,12 +130,12 @@
                 </div>
             </div>
             {% endif %} {% if character.has_modules() %}
-            <div class="flex flex-col gap-1">
+            <div class="flex flex-col flex-wrap grow shrink  gap-1">
                 <span>{{ i18t('label.modules') }}:</span>
-                <div class="flex flex-col flex-nowrap gap-1">
+                <div class="flex flex-col flex-nowrap grow shrink  gap-1">
                     {% for mid, module in character.get_modules().items() %}
                     <span class="whitespace-nowrap text-nowrap">{{ module.get_name(language) }}:</span>
-                    <div class="flex flex-row flex-nowrap gap-2">
+                    <div class="flex flex-row flex-nowrap grow shrink  gap-2">
                         {{ template(
                         'components/number_input',
                         input_id="module-%s-%s-from" % (character.id, mid),

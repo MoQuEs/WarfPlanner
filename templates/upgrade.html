@@ -4,12 +4,12 @@
 >
     <div class="flex flex-row gap-4">
         <div class="flex flex-col gap-2">
-            <span class="text-nowrap">{{ character.get_name(language) }}</span>
+            <span class="w-auto max-w-36 min-w-16 font-bold">{{ character.get_name(language) }}</span>
 
             <img src="/static/images/avatars/{{ character.id }}.png"
                  title="{{ character.get_name(language) }}"
                  alt="{{ character.get_name(language) }}"
-                 class="h-auto max-h-32 w-auto max-w-32 min-w-16 min-h-16"
+                 class="h-auto w-auto min-w-16 max-w-36"
                  loading="lazy"
             />
 
@@ -92,7 +92,7 @@
     {% if upgrades.materials %}
     {{ template('components/hr')|safe }}
 
-    <div class="flex flex-row flex-wrap gap-1">
+    <div class="flex flex-row flex-wrap place-content-evenly gap-1">
         {% for material_id, material_count in materials.items() %}
         {{ template(
             'material',

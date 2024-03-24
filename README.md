@@ -18,13 +18,16 @@ It uses AI to recognize materials from screenshots or open client of depot scree
 of materials.
 
 ### TODO
-- Add tooltips to icons
+- Add copy/paste for upgrades
+- Add page for owned characters with stats
+  - reflect that stats in upgrade page
 - Add screencapture from game
 - Add AI for materials from screenshots/screencapture
-- Add OCR for materials amounts
+  - Add OCR for materials amounts
+- Add AI for characters from screenshots/screencapture
+  - Add OCR for characters stats
 - Make it usable
 - Make it executable/installable
-- Add hide and show for characters in character list
 
 ### TODO (in future if all above is done)
 - Add rooster mechanism for characters like:
@@ -75,8 +78,19 @@ pip install types-PyYAML --no-cache-dir --force-reinstall --upgrade
 pip install codespell --no-cache-dir --force-reinstall --upgrade
 ```
 
-##### Main
+##### OS dependencies
 ```shell
+pip install pywin32 --no-cache-dir --force-reinstall --upgrade
+```
+
+##### Main DEV
+```shell
+pip install pytesseract --no-cache-dir --force-reinstall --upgrade
+pip install easyocr --no-cache-dir --force-reinstall --upgrade
+pip install paddleocr --no-cache-dir --force-reinstall --upgrade
+
+pip install typeguard --no-cache-dir --force-reinstall --upgrade
+pip install adbutils --no-cache-dir --force-reinstall --upgrade
 pip install requests --no-cache-dir --force-reinstall --upgrade
 pip install pyyaml --no-cache-dir --force-reinstall --upgrade
 pip install python-dotenv --no-cache-dir --force-reinstall --upgrade
@@ -85,15 +99,17 @@ pip install marshmallow-dataclass --no-cache-dir --force-reinstall --upgrade
 pip install pywebview --no-cache-dir --force-reinstall --upgrade
 pip install flask --no-cache-dir --force-reinstall --upgrade
 pip install waitress --no-cache-dir --force-reinstall --upgrade
+pip install pillow --no-cache-dir --force-reinstall --upgrade
 pip install opencv-python --no-cache-dir --force-reinstall --upgrade
 pip install scikit-learn --no-cache-dir --force-reinstall --upgrade
 pip install scipy --no-cache-dir --force-reinstall --upgrade
 pip install matplotlib --no-cache-dir --force-reinstall --upgrade
 pip install autodistill-yolov8 --no-cache-dir --force-reinstall --upgrade
+pip install autodistill-yolov9 --no-cache-dir --force-reinstall --upgrade
 pip install roboflow --no-cache-dir --force-reinstall --upgrade
 pip install hub_sdk --no-cache-dir --force-reinstall --upgrade
 pip install ultralytics --no-cache-dir --force-reinstall --upgrade
-pip install easyocr --no-cache-dir --force-reinstall --upgrade
+#pip install torch torchvision torchaudio --no-cache-dir --force-reinstall --upgrade
 #pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118 --no-cache-dir --force-reinstall --upgrade
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121 --no-cache-dir --force-reinstall --upgrade
 ```

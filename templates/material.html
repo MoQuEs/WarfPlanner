@@ -32,11 +32,24 @@
         input_value=have,
         input_classes="max-w-24",
         props={
-            'hx-post': "/material/%s?need=%d" % (material.id, need),
-            'hx-trigger': "change",
-            'hx-target': "closest .material",
-            'hx-swap': "outerHTML",
+            'hx-post': "/material/%s?need=%d&full_refresh" % (material.id, need),
+            'hx-trigger': "change input keyup delay:100ms",
+            'hx-target': "#materials",
         }
+    )|safe }}
+    {% endif %}
+
+    {% if show_craft %}
+    {{ template(
+        'components/button',
+        button_id="material-craft-%s" % material.id,
+        button_classes="btn-smp btn-alternative2",
+        props={
+            'hx-post': "/material/%s/craft?need=%d&full_refresh" % (material.id, need),
+            'hx-trigger': "click",
+            'hx-target': "#materials",
+        },
+        text=i18t('button.craft'),
     )|safe }}
     {% endif %}
 </div>

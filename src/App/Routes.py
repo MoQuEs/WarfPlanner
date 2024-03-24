@@ -1,13 +1,19 @@
 import re
 from http import HTTPStatus
-from pprint import pprint
 from typing import NamedTuple, TypeAlias
-from flask import Blueprint, redirect, Response, current_app, request, send_file
+from flask import Blueprint, redirect, Response, request, send_file
 
 from .ArknightsData import arknights_data_generator
 from .Init import arknights, save, template, reload_init, config
+from .Logger import info
 from .Utils import add_upgrade_material, clamp, fonts_dir
-from .Types import CharacterUpgrades, CharacterUpgrade, Character, Material
+from .Types import (
+    CharacterUpgrades,
+    CharacterUpgrade,
+    Character,
+    Material,
+    ImportExport,
+)
 
 main_routes_blueprint: Blueprint = Blueprint("main", "main")
 
@@ -32,22 +38,22 @@ def favicon_route() -> str | Response:
 
 
 @main_routes_blueprint.get("/fonts/<path:font>")
-def font_route(font: str) -> str | Response:
+def fonts_route(font: str) -> str | Response:
     return send_file(fonts_dir(font))
 
 
 @main_routes_blueprint.post("/reload_app")
 def reload_app_route() -> str | Response:
-    current_app.logger.info("Reloading")
+    info("Reloading")
 
     reload_init()
 
     return Response(status=HTTPStatus.OK)
 
 
-@main_routes_blueprint.post("/download_arknights_data")
-def download_arknights_data_route() -> str | Response:
-    current_app.logger.info("Download arknights data")
+@main_routes_blueprint.post("/regenerate_arknights_data")
+def regenerate_arknights_data_route() -> str | Response:
+    info("Download arknights data")
 
     arknights_data_generator(config, arknights)
 
@@ -55,7 +61,7 @@ def download_arknights_data_route() -> str | Response:
 
 
 def characters() -> list[Character]:
-    current_app.logger.info("Characters")
+    info("Characters")
 
     characters_list = []
 
@@ -68,12 +74,14 @@ def characters() -> list[Character]:
 
 @main_routes_blueprint.get("/materials")
 def materials_route() -> str | Response:
-    current_app.logger.info("Showing materials")
+    info("Showing materials")
     return template("materials", sections=materials())
 
 
 def materials() -> MaterialsToUpgrade:
-    current_app.logger.info("Materials")
+    info("Materials")
+
+    showed_materials = {}
 
     sections = []
 
@@ -122,16 +130,37 @@ def materials() -> MaterialsToUpgrade:
                     "need": need,
                 }
 
+                showed_materials[material_to_show] = True
+
             section[display_group_name] = group
 
         sections.append(section)
+
+    # Rest from arknights.materials
+    section = {"materials.rest": {}}
+    for mid, material in arknights.materials.items():
+        if mid not in showed_materials:
+            have = 0
+            if mid in save.materials:
+                have = save.materials[mid]
+
+            need = 0
+            if mid in materials_to_upgrade["all"]:
+                need = materials_to_upgrade["all"][mid]
+
+            section["materials.rest"][mid] = {
+                "material": material,
+                "have": have,
+                "need": need,
+            }
+    sections.append(section)
 
     return sections
 
 
 @main_routes_blueprint.post("/material/<mid>")
 def material_update_route(mid: str) -> str | Response:
-    current_app.logger.info("Material update")
+    info("Material update")
 
     need = 0
     if "need" in request.args:
@@ -142,17 +171,50 @@ def material_update_route(mid: str) -> str | Response:
     save.materials[mid] = have
     save.save()
 
-    return template("material", material=arknights.materials[mid], have=have, need=need, show_input=True)
+    if "full_refresh" in request.args:
+        return materials_route()
+
+    return template(
+        "material",
+        material=arknights.materials[mid],
+        have=have,
+        need=need,
+        show_input=True,
+        can_craft=arknights.can_craft_material(mid),
+    )
+
+
+@main_routes_blueprint.post("/material/<mid>/craft")
+def material_craft_route(mid: str) -> str | Response:
+    info("Material update")
+
+    need = 0
+    if "need" in request.args:
+        need = int(request.args["need"])
+
+    arknights.craft_material(mid)
+
+    if "full_refresh" in request.args:
+        return materials_route()
+
+    return template(
+        "material",
+        material=arknights.materials[mid],
+        have=save.materials[mid],
+        need=need,
+        show_input=True,
+        can_craft=arknights.can_craft_material(mid),
+    )
 
 
 @main_routes_blueprint.get("/upgrades")
 def upgrades_route() -> str | Response:
-    current_app.logger.info("Showing upgrades")
+    info("Showing upgrades")
     return template("upgrades", characters_to_upgrade=upgrades(), characters=characters())
 
 
 def upgrades() -> list[CharactersToUpgrade]:
-    current_app.logger.info("upgrades")
+    info("upgrades")
 
     characters_to_upgrade = []
 
@@ -171,7 +233,7 @@ def upgrades() -> list[CharactersToUpgrade]:
 
 @main_routes_blueprint.get("/upgrade/<cid>")
 def upgrade_route(cid: str) -> str | Response:
-    current_app.logger.info("Adding upgrade for %s", cid)
+    info("Adding upgrade for %s", cid)
 
     for _cid, upgrades in save.upgrades.items():
         if cid == _cid:
@@ -188,7 +250,7 @@ def upgrade_route(cid: str) -> str | Response:
 
 @main_routes_blueprint.get("/upgrade/<cid>/form")
 def upgrade_form_route(cid: str) -> str | Response:
-    current_app.logger.info("Showing upgrade form for %s", cid)
+    info("Showing upgrade form for %s", cid)
 
     for _cid, upgrade in save.upgrades.items():
         if cid == _cid:
@@ -200,7 +262,7 @@ def upgrade_form_route(cid: str) -> str | Response:
 
 @main_routes_blueprint.put("/upgrade/<cid>")
 def upgrades_add_route(cid: str) -> str | Response:
-    current_app.logger.info("Add upgrade for %s", cid)
+    info("Add upgrade for %s", cid)
 
     if cid in save.upgrades:
         return Response(status=HTTPStatus.CONFLICT)
@@ -212,7 +274,7 @@ def upgrades_add_route(cid: str) -> str | Response:
 
 @main_routes_blueprint.post("/upgrade/<cid>")
 def upgrades_edit_route(cid: str) -> str | Response:
-    current_app.logger.info("Saving upgrade for %s", cid)
+    info("Saving upgrade for %s", cid)
 
     if cid not in save.upgrades:
         return Response(status=HTTPStatus.NOT_FOUND)
@@ -274,7 +336,7 @@ def upgrades_edit_route(cid: str) -> str | Response:
 
 @main_routes_blueprint.post("/upgrade/<cid>/toggle/<toggle_type>")
 def upgrades_toggle_route(cid: str, toggle_type: str) -> str | Response:
-    current_app.logger.info("Toggled enables for %s", cid)
+    info("Toggled enables for %s", cid)
 
     if cid not in save.upgrades:
         return Response(status=HTTPStatus.NOT_FOUND)
@@ -294,7 +356,7 @@ def upgrades_toggle_route(cid: str, toggle_type: str) -> str | Response:
 
 @main_routes_blueprint.delete("/upgrade/<cid>")
 def upgrades_delete_route(cid: str) -> str | Response:
-    current_app.logger.info("Deleting upgrade for %s", cid)
+    info("Deleting upgrade for %s", cid)
 
     if cid not in save.upgrades:
         return Response(status=HTTPStatus.NOT_FOUND)
@@ -305,31 +367,63 @@ def upgrades_delete_route(cid: str) -> str | Response:
     return Response(status=HTTPStatus.OK)
 
 
+@main_routes_blueprint.get("/recruitment")
+def recruitment_route() -> str | Response:
+    info("Showing recruitment")
+
+    return template("recruitment")
+
+
 @main_routes_blueprint.get("/import_export")
 def import_export_route() -> str | Response:
-    current_app.logger.info("Showing import/export")
+    info("Showing import/export")
 
     return template("import_export")
 
 
-@main_routes_blueprint.post("/import/<import_type>")
-def import_route(import_type: str) -> str | Response:
-    current_app.logger.info("Import data")
+@main_routes_blueprint.get("/export/<export_system>/<export_type>")
+def export_route(export_system: str, export_type: str) -> str | Response:
+    info("Export data for %s and type %s" % (export_system, export_type))
 
-    arknights.import_from(import_type, request.form[import_type])
+    import_export = ImportExport()
+
+    function_name = "%s_export_%s" % (export_system, export_type)
+    if function_name not in import_export.allowed_exports:
+        return Response(status=HTTPStatus.NOT_FOUND)
+
+    export_value = (getattr(import_export, function_name))(arknights, save)
+
+    return template(
+        "import_export-export_textarea",
+        export_system=export_system,
+        export_value=export_value,
+    )
+
+
+@main_routes_blueprint.post("/import/<import_system>/<import_type>")
+def import_route(import_system: str, import_type: str) -> str | Response:
+    info("Import data for %s and type %s" % (import_system, import_type))
+
+    import_export = ImportExport()
+
+    function_name = "%s_import_%s" % (import_system, import_type)
+    if function_name not in import_export.allowed_imports:
+        return Response(status=HTTPStatus.NOT_FOUND)
+
+    (getattr(import_export, function_name))(request.form[import_system], arknights, save)
 
     return template("import_export")
 
 
 @main_routes_blueprint.get("/settings")
 def settings_route() -> str | Response:
-    current_app.logger.info("Showing settings")
+    info("Showing settings")
     return template("settings")
 
 
 @main_routes_blueprint.post("/settings")
 def settings_change_route() -> str | Response:
-    current_app.logger.info("Showing settings change")
+    info("Showing settings change")
 
     config.scale(int(request.form["scale"]))
     config.theme(request.form["theme"])
@@ -350,6 +444,6 @@ def settings_change_route() -> str | Response:
 
 @main_routes_blueprint.get("/about")
 def about_route() -> str | Response:
-    current_app.logger.info("Showing about")
+    info("Showing about")
 
     return template("about")

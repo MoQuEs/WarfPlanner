@@ -1,4 +1,4 @@
-<div class="flex flex-col gap-4">
+<div class="flex flex-col gap-4 import_export">
     <div class="grid grid-cols-1 gap-4 pl-16 md:pl-0">
         {% if is_dev %}
         <button type="button" class="flex grow btn btn-light" onclick="load_import_export()">
@@ -10,15 +10,32 @@
 
     {{ template(
         'import_export-form',
-        link=i18t('import_export.penguin-statistics-url'),
-        title=i18t('import_export.penguin-statistics'),
-        import_export_name='penguin-statistics'
+        link=i18t('import_export.penguin_statistics-url'),
+        title=i18t('import_export.penguin_statistics'),
+        import_export_name='penguin_statistics',
+        exports=[
+            'json',
+        ]
     )|safe }}
 
     {{ template(
         'import_export-form',
         link=i18t('import_export.gamepress-url'),
         title=i18t('import_export.gamepress'),
-        import_export_name='gamepress'
+        import_export_name='gamepress',
+        exports=[
+            'csv',
+            'link',
+        ]
+    )|safe }}
+
+    {{ template(
+        'import_export-form',
+        link=i18t('import_export.arknights_toolbox-url'),
+        title=i18t('import_export.arknights_toolbox'),
+        import_export_name='arknights_toolbox',
+        exports=[
+            'json',
+        ]
     )|safe }}
 </div>

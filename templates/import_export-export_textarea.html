@@ -1,0 +1,8 @@
+{{ template(
+    'components/textarea',
+    textarea_id="%s-export" % export_system,
+    textarea_name="%s-export" % export_system,
+    textarea_rows=10,
+    textarea_value=export_value,
+    label=i18t("import_export.export"),
+)|safe }}

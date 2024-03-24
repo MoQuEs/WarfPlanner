@@ -7,13 +7,14 @@
       "menu": {
         "upgrades": "Upgrades",
         "materials": "Materials",
+        "recruitment": "Recruitment",
         "import_export": "Import/Export",
         "settings": "Settings",
         "about": "About"
       },
       "button": {
         "reload_app": "Reload app",
-        "download_arknights_data": "Download arknights data",
+        "regenerate_arknights_data": "Regenerate arknights data",
         "load_materials": "Load materials",
         "edit_materials": "Edit materials",
         "load_characters": "Load characters",
@@ -21,7 +22,8 @@
         "show_cn_only_characters": "Show CN only characters",
         "load_settings": "Load settings",
         "load_import_export": "Load import/export",
-        "load_about": "Load about"
+        "load_about": "Load about",
+        "craft": "Craft"
       },
       "placeholder": {
         "search_character": "Search character..."
@@ -76,7 +78,25 @@
         "caster_chips": "Caster chips",
         "medic_chips": "Medic chips",
         "supporter_chips": "Supporter chips",
-        "specialist_chips": "Specialist chips"
+        "specialist_chips": "Specialist chips",
+        "rest": "Rest"
+      },
+      "recruitment": {
+        "class": "Class",
+        "position": "Position",
+        "qualification": "Qualification",
+        "affix": "Affix",
+        "types": {
+          "vanguard": "Vanguard",
+          "guard": "Guard",
+          "defender": "Defender",
+          "sniper": "Sniper",
+          "caster": "Caster",
+          "medic": "Medic",
+          "supporter": "Supporter",
+          "specialist": "Specialist",
+          "all": "All"
+        }
       },
       "are_you_sure": "Are you sure?",
       "settings": {
@@ -91,7 +111,10 @@
           "theme-dark": "Dark",
           "language": "Language",
           "language-tooltip": "Language",
-          "language-en_us": "English (US)"
+          "language-en_us": "English (US)",
+          "arknights_client": "Arknights client",
+          "arknights_client-tooltip": "Arknights client",
+          "arknights_client-en_us": "English (global)"
         },
         "app": {
           "title": "Application",
@@ -124,10 +147,15 @@
         "export": "Export",
         "import_data": "Import data...",
         "copy_export_data": "Copy export data",
-        "penguin-statistics": "Penguin Statistics",
-        "penguin-statistics-url": "https://penguin-stats.io/planner",
-        "gamepress": "Game Press",
-        "gamepress-url": "https://gamepress.gg/arknights/tools/arknights-operator-planner"
+        "json": "JSON",
+        "csv": "CSV",
+        "link": "Link",
+        "penguin_statistics": "Penguin Statistics 'penguin-stats.io'",
+        "penguin_statistics-url": "https://penguin-stats.io/planner",
+        "gamepress": "Game Press 'gamepress.gg'",
+        "gamepress-url": "https://gamepress.gg/arknights/tools/arknights-operator-planner",
+        "arknights_toolbox": "Arknights toolbox 'arkn.lolicon.app'",
+        "arknights_toolbox-url": "https://arkn.lolicon.app/#/material"
       },
       "about": {
         "title": "About",

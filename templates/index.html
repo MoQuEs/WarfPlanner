@@ -75,6 +75,12 @@
         )|safe }}
         {{ template(
             'components/menu_item',
+            ele_id='recruitment',
+            icon_id='bi-bar-chart-steps',
+            text_id='menu.recruitment'
+        )|safe }}
+        {{ template(
+            'components/menu_item',
             ele_id='import_export',
             icon_id='bi-floppy',
             text_id='menu.import_export'
@@ -103,15 +109,15 @@
         {{ i18t('button.reload_app') }}
     </button>
 
-    <button id="download_arknights_data"
+    <button id="regenerate_arknights_data"
             type="button"
             class="btn btn-red mt-4 w-full"
-            hx-post="/download_arknights_data"
-            hx-target="#download_arknights_data"
+            hx-post="/regenerate_arknights_data"
+            hx-target="#regenerate_arknights_data"
             hx-swap="none"
             hx-on--after-request="location.reload(true)">
         <i class="bi bi-arrow-repeat"></i>
-        {{ i18t('button.download_arknights_data') }}
+        {{ i18t('button.regenerate_arknights_data') }}
     </button>
 </aside>
 
@@ -128,6 +134,12 @@
              id="materials"
              role="tabpanel"
              aria-labelledby="materials-tab"
+        >
+        </div>
+        <div class="hidden"
+             id="recruitment"
+             role="tabpanel"
+             aria-labelledby="recruitment-tab"
         >
         </div>
         <div class="hidden"

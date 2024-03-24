@@ -3,11 +3,7 @@ from typing import Any
 from autodistill.detection import CaptionOntology
 from autodistill_yolov8 import YOLOv8Base
 from dotenv import load_dotenv
-
-try:
-    from yaml import CLoader as Loader, load
-except ImportError:
-    from yaml import Loader, load
+from yaml import Loader, load
 
 from App.Utils import auto_labels_in_dir, auto_labels_out_dir, best_run, model_args, clear_auto_labels_out_dir
 

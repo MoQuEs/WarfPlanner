@@ -54,6 +54,23 @@
                 'hx-swap': "outerHTML",
             }
             )|safe }}
+            {{ template(
+            'components/select',
+            select_id='arknights_client',
+            select_name='arknights_client',
+            selected=config.arknights_client(),
+            options=[
+                ('en_US', i18t('settings.settings.arknights_client-en_US')),
+            ],
+            label=i18t('settings.settings.arknights_client'),
+            tooltip=i18t('settings.settings.arknights_client-tooltip'),
+            props={
+                'hx-post': "/settings",
+                'hx-trigger': "change",
+                'hx-target': "closest .settings",
+                'hx-swap': "outerHTML",
+            }
+            )|safe }}
         </div>
         <div class="flex flex-col card-smp gap-3">
             <p>{{ i18t('settings.app.title')|safe }}</p>

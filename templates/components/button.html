@@ -1,0 +1,15 @@
+<button id="{{ button_id }}"
+        type="{{ button_type }}"
+        class="{{ button_classes }} w-full"
+        {% if props %}
+        {% for key, value in props.items() %}
+            {{ key }}="{{ value }}"
+        {% endfor %}
+        {% endif %}
+        {% if disabled %}disabled{% endif %}
+>
+    {% if len(icon) > 0 %}
+    <i class="bi {{ icon }}"></i>
+    {% endif %}
+    {{ text }}
+</button>

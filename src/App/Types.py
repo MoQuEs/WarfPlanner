@@ -1,9 +1,10 @@
 from abc import abstractmethod
+from base64 import b64encode, urlsafe_b64encode, b64decode, urlsafe_b64decode
 from dataclasses import dataclass, field, InitVar
 from json import loads, dumps
 from os.path import exists
 from pprint import pprint
-from typing import Optional, Any
+from typing import Optional, Any, Union
 from flask import current_app
 from marshmallow_dataclass import class_schema
 from .Utils import (
@@ -16,6 +17,9 @@ from .Utils import (
     add_upgrade_materials,
     remove_duplicate,
     map_object,
+    from_b64,
+    to_b64,
+    config_file,
 )
 
 
@@ -32,14 +36,14 @@ class Rarity:
         ]
 
     @staticmethod
-    def from_game_data(rarity: str | int) -> int:
+    def from_game_data(rarity: str | int) -> tuple[int, str, str]:
         for rarity_id, rarity_icon_id, rarity_name in Rarity.all_as_tuple():
             if (
                 rarity_icon_id == str(rarity)
                 or rarity_name == str(rarity)
                 or (isinstance(rarity, int) and rarity_id == rarity)
             ):
-                return rarity_id
+                return rarity_id, rarity_icon_id, rarity_name
 
         raise Exception("Unknown rarity %s" % rarity)
 
@@ -164,6 +168,7 @@ class CharacterUpgrades:
 @dataclass
 class Character:
     id: str = field(default="")
+    gamepress_id: Union[int | None] = field(default=None)
     name: dict[str, str] = field(default_factory=dict)
     rarity: int = field(default=1)
     elite: list[dict[str, int]] = field(default_factory=list)
@@ -180,7 +185,7 @@ class Character:
         self.name = {lang_id: value["name"]}
         if "en_US" not in self.name:
             self.name["en_US"] = value["appellation"]
-        self.rarity = Rarity.from_game_data(value["rarity"])
+        (self.rarity, _, _) = Rarity.from_game_data(value["rarity"])
 
         if value["phases"] is not None:
             for phase_data in value["phases"]:
@@ -230,7 +235,9 @@ class Character:
     def is_on_global(self) -> bool:
         return True if "en_US" in self.name else False
 
-    def get_materials_for_upgrade(self, data: "Arknights", upgrades: CharacterUpgrades) -> dict[str, int]:
+    def get_materials_for_upgrade(
+        self, data: "Arknights", upgrades: CharacterUpgrades, add_sub_materials: bool = True
+    ) -> dict[str, int]:
         materials: dict[str, int] = {}
 
         all_gold = 0
@@ -296,20 +303,8 @@ class Character:
         if all_exp > 0 or data.static_names["EXP"] in materials:
             add_upgrade_material(materials, data.static_names["EXP"], all_exp)
 
-        for mat, needs in materials.copy().items():
-            req = self.get_sub_materials(data, mat, needs)
-            add_upgrade_materials(materials, req)
-
-        return materials
-
-    def get_sub_materials(self, data: "Arknights", mid: str, count: int) -> dict[str, int]:
-        materials: dict[str, int] = {}
-
-        if mid in data.needs_additional_mats:
-            for need, need_count in data.needs_additional_mats[mid].items():
-                add_upgrade_material(materials, need, need_count * count)
-                req = self.get_sub_materials(data, need, need_count * count)
-                add_upgrade_materials(materials, req)
+        if add_sub_materials:
+            data.add_sub_materials(materials)
 
         return materials
 
@@ -326,7 +321,7 @@ class Material:
         self = Material()
         self.id = mid
         self.name = {lang_id: value["name"]}
-        self.rarity = Rarity.from_game_data(value["rarity"])
+        (self.rarity, _, _) = Rarity.from_game_data(value["rarity"])
         self.craft_from = craft_from
 
         return self
@@ -386,36 +381,40 @@ class UpgradeGoldMap:
         return self
 
 
-# {
-#   "@type":"@penguin-statistics/planner/config",
-#   "items":[
-#     {"id":"30135","have":1,"need":1},
-#     {"id":"30043","have":1,"need":1},
-#     {"id":"31043","have":1,"need":1},
-#     ...
-#   ],
-#   "options":{
-#     "byProduct":false,
-#     "requireExp":false,
-#     "requireLmb":false
-#   },
-#   "excludes":[]
-# }
 @dataclass
-class PenguinStatistics:
+class ImportExport:
+    allowed_exports = [
+        "penguin_statistics_export_json",
+        "arknights_toolbox_export_json",
+        "gamepress_export_csv",
+        "gamepress_export_link",
+    ]
+
+    allowed_imports = [
+        "penguin_statistics_import_json",
+        "arknights_toolbox_import_json",
+        "gamepress_import_csv",
+        "gamepress_import_link",
+    ]
+
+    # penguin_statistics_export_json and penguin_statistics_import_json function data
+    # {
+    #   "@type":"@penguin-statistics/depot",
+    #   "items":[
+    #     {"id":"30135","have":1,"need":1},
+    #     {"id":"30043","have":1,"need":1},
+    #     {"id":"31043","have":1,"need":1},
+    #     ...
+    #   ]
+    # }
+
     @staticmethod
-    def export_data(arknights: "Arknights", save: "Save") -> str:
+    def penguin_statistics_export_json(arknights: "Arknights", save: "Save") -> str:
         upgrades = arknights.get_materials_for_upgrade(save.upgrades)
 
         data = {
-            "@type": "@penguin-statistics/planner/config",
+            "@type": "@penguin-statistics/depot",
             "items": [],
-            "options": {
-                "byProduct": False,
-                "requireExp": False,
-                "requireLmb": False,
-            },
-            "excludes": [],
         }
 
         for mid, count in upgrades["all"].items():
@@ -439,7 +438,7 @@ class PenguinStatistics:
         return dumps(data, indent=4)
 
     @staticmethod
-    def import_data(data: str, arknights: "Arknights", save: "Save") -> None:
+    def penguin_statistics_import_json(data: str, arknights: "Arknights", save: "Save") -> None:
         data = loads(data)
         for item in data["items"]:
             mid = item["id"]
@@ -452,21 +451,49 @@ class PenguinStatistics:
 
         save.save()
 
+    # arknights_toolbox_export_json and arknights_toolbox_import_json function data
+    # {
+    #   "30135": 1,
+    #   "30043": 1,
+    #   "31043": 1,
+    #   ...
+    # }
 
-# LMD,0
-# Purchase Certificate,0
-# Strategic Battle Record,0
-# Tactical Battle Record,0
-# Frontline Battle Record,0
-# Drill Battle Record,0
-# Skill Summary - 3,0
-# Skill Summary - 2,0
-# Skill Summary - 1,0
-# ...
-@dataclass
-class GamePress:
     @staticmethod
-    def export_data(arknights: "Arknights", save: "Save") -> str:
+    def arknights_toolbox_export_json(arknights: "Arknights", save: "Save") -> str:
+        upgrades = arknights.get_materials_for_upgrade(save.upgrades)
+
+        data = {mid: count for mid, count in upgrades["all"].items()}
+
+        return dumps(data, indent=4)
+
+    @staticmethod
+    def import_json(data: str, arknights: "Arknights", save: "Save") -> None:
+        data = loads(data)
+
+        for mid, count in data.items():
+            if mid in arknights.materials:
+                if mid not in save.materials:
+                    save.materials[mid] = 0
+
+                save.materials[mid] += count
+
+        save.save()
+
+    # gamepress_export_csv and gamepress_import_csv function data
+    # LMD,0
+    # Purchase Certificate,0
+    # Strategic Battle Record,0
+    # Tactical Battle Record,0
+    # Frontline Battle Record,0
+    # Drill Battle Record,0
+    # Skill Summary - 3,0
+    # Skill Summary - 2,0
+    # Skill Summary - 1,0
+    # ...
+
+    @staticmethod
+    def gamepress_export_csv(arknights: "Arknights", save: "Save") -> str:
         upgrades = arknights.get_materials_for_upgrade(save.upgrades)
 
         data = ""
@@ -477,7 +504,7 @@ class GamePress:
         return data
 
     @staticmethod
-    def import_data(data: str, arknights: "Arknights", save: "Save") -> None:
+    def gamepress_import_csv(data: str, arknights: "Arknights", save: "Save") -> None:
         for line in data.split("\n"):
             if line.strip() == "":
                 continue
@@ -487,6 +514,223 @@ class GamePress:
             save.materials[mid] = int(count)
 
         save.save()
+
+    # TODO: Fix base64 encoding and decoding
+    # gamepress_export_link and gamepress_import_link function data
+    # https://gamepress.gg/arknights/tools/arknights-operator-planner#eyJvcGVyYXRvcnMiOlt7Im9wZXJhdG9yIjoiMTMxNiIsInN0YXJ0X3Byb21vdGlvbiI6MCwiZW5kX3Byb21vdGlvbiI6Miwic3RhcnRfbGV2ZWwiOjEsImVuZF9sZXZlbCI6Mywic3RhcnRfc2tpbGwiOjEsImVuZF9za2lsbCI6Nywic3RhcnRfc3BlY3MiOlswLDAsMF0sImVuZF9zcGVjcyI6WzMsMywzXSwibW9kdWxlc19uZXciOnsidW5pZXF1aXBfMDAyX2FnbGluYSI6eyJzdGFydCI6IjAiLCJlbmQiOiIzIn0sInVuaWVxdWlwXzAwM19hZ2xpbmEiOnsic3RhcnQiOiIwIiwiZW5kIjoiMyJ9fX1dLCJpbnZlbnRvcnkiOnsiNDM0MSI6MiwiNDM2NiI6MiwiNDM4MSI6MiwiNDM4NiI6MiwiNDQ0NiI6MiwiNDQ4NiI6MiwiNDUxNiI6MiwiNDU3NiI6MiwiNDY1NiI6MiwiNDY2MSI6MiwiNDY2NiI6MiwiNDY3MSI6MiwiMTEzNTYiOjIsIjM1NTExIjoyLCI0NjkxNiI6MiwiNjYzMzYiOjJ9LCJleGNsdWRlZCI6W119
+    # base64 part as json:
+    # {
+    #   "operators": [
+    #     {
+    #       "operator": "1316",
+    #       "start_promotion": 0,
+    #       "end_promotion": 2,
+    #       "start_level": 1,
+    #       "end_level": 3,
+    #       "start_skill": 1,
+    #       "end_skill": 7,
+    #       "start_specs": [
+    #         0,
+    #         0,
+    #         0
+    #       ],
+    #       "end_specs": [
+    #         3,
+    #         3,
+    #         3
+    #       ],
+    #       "modules_new": {
+    #         "uniequip_002_aglina": {
+    #           "start": "0",
+    #           "end": "3"
+    #         },
+    #         "uniequip_003_aglina": {
+    #           "start": "0",
+    #           "end": "3"
+    #         }
+    #       }
+    #     },
+    #     ...
+    #   ],
+    #   "inventory": {
+    #     "4341": 2,
+    #     "4366": 2,
+    #     "4381": 2,
+    #     "4386": 2,
+    #     "4446": 2,
+    #     "4486": 2,
+    #     "4516": 2,
+    #     "4576": 2,
+    #     "4656": 2,
+    #     "4661": 2,
+    #     "4666": 2,
+    #     "4671": 2,
+    #     "11356": 2,
+    #     "35511": 2,
+    #     "46916": 2,
+    #     "66336": 2,
+    #     ...
+    #   },
+    #   "excluded": []
+    # }
+
+    @staticmethod
+    def gamepress_export_link(arknights: "Arknights", save: "Save") -> str:
+        planner_link = "https://gamepress.gg/arknights/tools/arknights-operator-planner"
+
+        upgrades = arknights.get_materials_for_upgrade(save.upgrades)
+
+        data = {
+            "operators": [],
+            "inventory": {},
+            "excluded": [],
+        }
+
+        for mid, count in save.materials.items():
+            if mid in upgrades["all"]:
+                data["inventory"][mid] = count
+
+        for cid, character_upgrades in save.upgrades.items():
+            if arknights.characters[cid].gamepress_id:
+                operator = {
+                    "operator": arknights.characters[cid].gamepress_id,
+                    "start_promotion": character_upgrades.level.elite_from,
+                    "end_promotion": character_upgrades.level.elite_to,
+                    "start_level": character_upgrades.level.level_from,
+                    "end_level": character_upgrades.level.level_to,
+                    "start_skill": character_upgrades.all_skil_lvlup.upgrade_from,
+                    "end_skill": character_upgrades.all_skil_lvlup.upgrade_to,
+                    "start_specs": [],
+                    "end_specs": [],
+                    "modules_new": {},
+                }
+
+                sid_c = 0
+                for sid, skill in arknights.characters[cid].skills.items():
+                    operator["start_specs"].insert(sid_c, 0)
+                    operator["end_specs"].insert(sid_c, 0)
+
+                    if sid in character_upgrades.skills:
+                        operator["start_specs"][sid_c] = character_upgrades.skills[sid].upgrade_from
+                        operator["end_specs"][sid_c] = character_upgrades.skills[sid].upgrade_to
+
+                    sid_c += 1
+
+                for mid, module in arknights.characters[cid].modules.items():
+                    operator["modules_new"][mid] = {
+                        "start": 0,
+                        "end": 0,
+                    }
+
+                    if mid in character_upgrades.modules:
+                        operator["modules_new"][mid]["start"] = character_upgrades.modules[mid].upgrade_from
+                        operator["modules_new"][mid]["end"] = character_upgrades.modules[mid].upgrade_to
+
+                data["operators"].append(operator)
+
+        return "%s#%s" % (planner_link, to_b64(dumps(data)))
+
+    @staticmethod
+    def gamepress_import_link(data: str, arknights: "Arknights", save: "Save") -> None:
+        split_link = data.split("#")
+        if len(split_link) > 1:
+            split = split_link[1]
+        else:
+            split = split_link[0]
+
+        data = loads(from_b64(split))
+
+        for mid, count in data["inventory"].items():
+            if mid in arknights.materials:
+                save.materials[mid] = count
+
+        for operator in data["operators"]:
+            cid = None
+            for character_id, character in arknights.characters.items():
+                if character.gamepress_id == operator["operator"]:
+                    cid = character_id
+                    break
+
+            if cid:
+                if cid not in save.upgrades:
+                    save.upgrades[cid] = CharacterUpgrades()
+
+                character_upgrades = save.upgrades[cid]
+                character_upgrades.level.elite_from = operator["start_promotion"]
+                character_upgrades.level.elite_to = operator["end_promotion"]
+                character_upgrades.level.level_from = operator["start_level"]
+                character_upgrades.level.level_to = operator["end_level"]
+                character_upgrades.all_skil_lvlup.upgrade_from = operator["start_skill"]
+                character_upgrades.all_skil_lvlup.upgrade_to = operator["end_skill"]
+
+                sid_c = 0
+                for sid, skill in arknights.characters[cid].skills.items():
+                    if sid_c < len(operator["start_specs"]):
+                        character_upgrades.skills[sid] = CharacterUpgrade()
+                        character_upgrades.skills[sid].upgrade_from = operator["start_specs"][sid_c]
+                        character_upgrades.skills[sid].upgrade_to = operator["end_specs"][sid_c]
+
+                    sid_c += 1
+
+                for mid, module in arknights.characters[cid].modules.items():
+                    if mid in operator["modules_new"]:
+                        character_upgrades.modules[mid] = CharacterUpgrade()
+                        character_upgrades.modules[mid].upgrade_from = operator["modules_new"][mid]["start"]
+                        character_upgrades.modules[mid].upgrade_to = operator["modules_new"][mid]["end"]
+
+
+@dataclass
+class RecruitmentCharacter:
+    tags: set[int] = field(default_factory=set)
+    in_cn: bool = field(default=True)
+    in_global: bool = field(default=True)
+
+    def set_tags(self, profession: int, position: int, tagList: list[int]) -> None:
+        self.tags.add(profession)
+        self.tags.add(position)
+        self.tags.update(tagList)
+
+
+@dataclass
+class Recruitment:
+    tags: dict[str, dict[str, int]] = field(default_factory=dict)
+    characters: dict[str, RecruitmentCharacter] = field(default_factory=dict)
+
+    def add_tag(self, lang_id: str, tag: str, tid: int) -> None:
+        if lang_id not in self.tags:
+            self.tags[lang_id] = {}
+
+        self.tags[lang_id][tag] = tid
+
+    def search_tag(self, tag: str) -> int:
+        for lang_id, tags in self.tags.items():
+            if tag in tags:
+                return tags[tag]
+
+        raise Exception("Unknown tag %s" % tag)
+
+    def search_tag_with_lang_id(self, lang_id: str, tag: str) -> int:
+        if lang_id in self.tags and tag in self.tags[lang_id]:
+            return self.tags[lang_id][tag]
+
+        raise Exception("Unknown tag %s in lang %s" % (tag, lang_id))
+
+    def add_character(self, cid: str, in_cn: bool, in_global: bool) -> None:
+        if cid not in self.characters:
+            self.characters[cid] = RecruitmentCharacter()
+
+        self.characters[cid].in_cn = in_cn
+        self.characters[cid].in_global = in_global
+
+    def set_tags_for_character(
+        self, lang_id: str, cid: str, profession: int, position: int, tagList: list[str]
+    ) -> None:
+        if cid not in self.characters:
+            return
+
+        self.characters[cid].set_tags(
+            profession, position, [self.search_tag_with_lang_id(lang_id, tag) for tag in tagList]
+        )
 
 
 class SaveLoad:
@@ -530,11 +774,16 @@ class Arknights(SaveLoad):
     static_names: dict[str, str] = field(default_factory=dict)
     needs_additional_mats: dict[str, dict[str, int]] = field(default_factory=dict)
     display_materials: list[dict[str, list[str]]] = field(default_factory=list)
+    display_recruitment: dict[str, list[int]] = field(default_factory=dict)
+
+    recruitment: Recruitment = field(default=Recruitment())
 
     _save: "Save" = field(repr=False, init=False, default=None)
 
     @staticmethod
     def load() -> "Arknights":
+        if not exists(language_file()):
+            raise Exception("Language file not found")
         return Arknights.from_file(Arknights, arknights_file())
 
     def save(self) -> None:
@@ -543,21 +792,8 @@ class Arknights(SaveLoad):
     def set_save(self, _save: "Save") -> None:
         self._save = _save
 
-    def export_from(self, import_type: str) -> str:
-        if import_type == "penguin-statistics":
-            return PenguinStatistics.export_data(self, self._save)
-        elif import_type == "gamepress":
-            return GamePress.export_data(self, self._save)
-
-    def import_from(
-        self,
-        import_type: str,
-        data: str,
-    ) -> None:
-        if import_type == "penguin-statistics":
-            PenguinStatistics.import_data(data, self, self._save)
-        elif import_type == "gamepress":
-            GamePress.import_data(data, self, self._save)
+    def get_save(self) -> "Save":
+        return self._save
 
     def add_character(self, character_id: str, lang_id: str, character: Character) -> None:
         if character_id not in self.characters:
@@ -595,12 +831,65 @@ class Arknights(SaveLoad):
             if not character_upgrades.enabled:
                 continue
 
-            materials = character.get_materials_for_upgrade(self, character_upgrades)
+            materials = character.get_materials_for_upgrade(self, character_upgrades, False)
+            self.add_sub_materials(materials)
+
             add_upgrade_materials(upgrades["all"], materials)
 
             upgrades[cid] = materials
 
         return upgrades
+
+    def add_sub_materials(self, materials: dict[str, int]) -> None:
+        for mat, needs in materials.copy().items():
+            saved = 0 if mat not in self._save.materials else self._save.materials[mat]
+            if needs > saved:
+                add_upgrade_materials(materials, self._get_sub_materials(mat, needs - saved))
+
+    def _get_sub_materials(self, mid: str, count: int) -> dict[str, int]:
+        materials: dict[str, int] = {}
+
+        if mid in self.needs_additional_mats:
+            for mat, needs in self.needs_additional_mats[mid].items():
+                needs = needs * count
+                saved = 0 if mat not in self._save.materials else self._save.materials[mat]
+
+                if needs > 0:
+                    add_upgrade_material(materials, mat, needs)
+
+                if needs > saved:
+                    add_upgrade_materials(materials, self._get_sub_materials(mat, needs - saved))
+
+        return materials
+
+    def can_craft_material(self, mid: str) -> bool:
+        if mid not in self.materials or self.materials[mid].craft_from is None:
+            return False
+
+        for mat, count in self.materials[mid].craft_from.items():
+            if mat not in self._save.materials or self._save.materials[mat] < count:
+                return False
+
+        return True
+
+    def craft_material(self, mid: str) -> bool:
+        if mid not in self.materials or self.materials[mid].craft_from is None:
+            return False
+
+        for mat, count in self.materials[mid].craft_from.items():
+            if mat in self._save.materials:
+                self._save.materials[mat] -= count
+                if self._save.materials[mat] < 0:
+                    return False
+
+        if mid not in self._save.materials:
+            self._save.materials[mid] = 0
+
+        self._save.materials[mid] += 1
+
+        self._save.save()
+
+        return True
 
 
 @dataclass
@@ -610,12 +899,18 @@ class Save(SaveLoad):
 
     @staticmethod
     def load() -> "Save":
-        if not exists(language_file()):
-            Language().save()
+        if not exists(config_file()):
+            Save().save()
         return Save.from_file(Save, save_file())
 
     def save(self) -> None:
         self.to_file(Save, save_file())
+
+    def clear_materials(self) -> None:
+        self.materials = {}
+
+    def clear_upgrades(self) -> None:
+        self.upgrades = {}
 
 
 @dataclass
@@ -625,6 +920,8 @@ class Language(SaveLoad):
 
     @staticmethod
     def load() -> "Language":
+        if not exists(language_file()):
+            raise Exception("Language file not found")
         return Language.from_file(Language, language_file())
 
     def save(self) -> None:

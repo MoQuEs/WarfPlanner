@@ -1,4 +1,4 @@
-<div class="flex flex-col card-smp gap-4 import_export">
+<div class="flex flex-col card-smp gap-4 import_export-form">
     <p class="font-bold text-blue-500 dark:text-blue-400">
         <a href="{{ link }}"
            title="{{ title }}"
@@ -11,22 +11,26 @@
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <form class="flex flex-col gap-4">
+            <div id="{{ import_export_name }}-export-box">
             {{ template(
-                'components/textarea',
-                textarea_id="%s-export" % import_export_name,
-                textarea_name=import_export_name,
-                textarea_rows=10,
-                textarea_value=arknights.export_from(import_export_name),
-                label=i18t('import_export.export')
+                'import_export-export_textarea',
+                export_system=import_export_name,
+                export_value='',
             )|safe }}
-            <button id="{{ import_export_name }}-export-button"
-                    type="button"
-                    class="btn btn-green w-full"
-                    onclick="copy_text_from_element('{{ "#%s-export" % import_export_name }}')"
-            >
-                <i class="bi bi-copy"></i>
-                {{ i18t('import_export.copy_export_data') }}
-            </button>
+            </div>
+            <div class="flex flex-row gap-2">
+            {% for export_format in exports %}
+                <button id="{{ import_export_name }}-export-{{ export_format }}-button"
+                        type="button"
+                        class="btn btn-green w-full"
+                        hx-get="/export/{{ import_export_name }}/{{ export_format }}"
+                        hx-target="#{{ import_export_name }}-export-box"
+                        hx-on--after-request="copy_text_from_element('#{{ import_export_name }}-export')" >
+                    <i class="bi bi-copy"></i>
+                    {{ i18t("import_export.%s" % export_format) }}
+                </button>
+            {% endfor %}
+            </div>
         </form>
         <form class="flex flex-col gap-4">
             {{ template(

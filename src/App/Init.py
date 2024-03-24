@@ -7,6 +7,7 @@ from typing import Any
 from dotenv import load_dotenv
 from flask import Flask
 from jinja2 import Environment, PackageLoader, select_autoescape
+from marshmallow import ValidationError
 
 from .ArknightsData import arknights_data_generator
 from .Config import Config
@@ -33,9 +34,12 @@ language.lang = config.language()
 save: Save = Save.load()
 
 if not exists(arknights_file()):
-    arknights: Arknights = arknights_data_generator(config, Arknights())
+    arknights: Arknights = arknights_data_generator(config, Arknights(), True)
 else:
-    arknights: Arknights = Arknights.load()
+    try:
+        arknights: Arknights = Arknights.load()
+    except ValidationError as e:
+        arknights: Arknights = arknights_data_generator(config, Arknights(), True)
 arknights.set_save(save)
 
 register(save.save)

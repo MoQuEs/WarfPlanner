@@ -1,0 +1,25 @@
+<div class="flex flex-col gap-4 recruitment">
+    <div class="grid grid-cols-1 gap-4 pl-16 md:pl-0">
+        {% if is_dev %}
+        <button type="button" class="flex grow btn btn-light" onclick="load_import_export()">
+            <i class="bi bi-arrow-down-up pr-1"></i>
+            {{ i18t('button.load_import_export') }}
+        </button>
+        {% endif %}
+    </div>
+
+    <div class="flex flex-col flex-wrap card-smp">
+        <p>{{ i18t(group_name) }}</p>
+        <div class="flex flex-row flex-wrap place-content-around gap-2">
+            {% for material_name, material in group.items() %}
+            {{ template(
+                'material',
+                material=material.material,
+                have=material.have,
+                need=material.need,
+                show_input=True
+            )|safe}}
+            {% endfor %}
+        </div>
+    </div>
+</div>

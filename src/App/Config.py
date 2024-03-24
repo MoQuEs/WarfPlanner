@@ -81,6 +81,9 @@ class Config:
     def language(self, value: None | str = None) -> str:
         return self.__set_and_get("settings", "language", value)
 
+    def arknights_client(self, value: None | str = None) -> str:
+        return self.__set_and_get("settings", "arknights_client", value)
+
     # app
 
     def port(self, value: None | int = None) -> int:

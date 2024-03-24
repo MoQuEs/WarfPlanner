@@ -1,3 +1,4 @@
+from base64 import urlsafe_b64decode, urlsafe_b64encode
 from glob import glob
 from json import load, dumps
 from os import getcwd, makedirs, remove, getenv
@@ -8,14 +9,12 @@ from shutil import rmtree
 from socket import socket
 from string import ascii_letters, digits
 from typing import Any, Callable
+from uuid import UUID
 
-from flask import current_app
 from requests import get
-from atexit import register
-from .ThreadPool import ThreadPool
 
-download_file_pool = ThreadPool(20)
-register(download_file_pool.join)
+from .Logger import error
+from .ThreadPool import get_pool as get_thread_pool, join_pool as join_thread_pool
 
 
 def get_free_port() -> int:
@@ -42,16 +41,20 @@ def pwd_dir(*paths: str) -> str:
     return str(__join(getcwd(), *paths))
 
 
-def data_join(*paths: str) -> str:
+def data_dir(*paths: str) -> str:
     return pwd_dir("data", *paths)
 
 
 def arknights_dir(*paths: str) -> str:
-    return data_join("arknights", *paths)
+    return data_dir("arknights", *paths)
+
+
+def ak_json_dir(*paths: str) -> str:
+    return arknights_dir("json", *paths)
 
 
 def auto_labels_in_dir(*paths: str) -> str:
-    return data_join("auto_labels_in", *paths)
+    return data_dir("auto_labels_in", *paths)
 
 
 def labels_to_generate() -> str:
@@ -59,11 +62,15 @@ def labels_to_generate() -> str:
 
 
 def auto_labels_out_dir(*paths: str) -> str:
-    return data_join("auto_labels_out", *paths)
+    return data_dir("auto_labels_out", *paths)
+
+
+def easyocr_dir(*paths: str) -> str:
+    return data_dir("easyocr", *paths)
 
 
 def labels_dir(*paths: str) -> str:
-    return data_join("labels", *paths)
+    return data_dir("labels", *paths)
 
 
 def label_data(label: str) -> str:
@@ -71,7 +78,7 @@ def label_data(label: str) -> str:
 
 
 def runs_dir(*paths: str) -> str:
-    return data_join("runs", *paths)
+    return data_dir("runs", *paths)
 
 
 def best_run(run: str) -> str:
@@ -83,7 +90,7 @@ def model_args(run: str) -> str:
 
 
 def testing_dir(*paths: str) -> str:
-    return data_join("testing", *paths)
+    return data_dir("testing", *paths)
 
 
 def testing_images_dir(*paths: str) -> str:
@@ -180,17 +187,19 @@ def put_json_file_content(path: str, data: Any, **kwargs: bool):
     put_file_content(path, dumps(data, indent=indent))
 
 
-def download_file(url: str, path: str, **kwargs: bool) -> ThreadPool:
-    def download():
+def download_file(url: str, path: str, **kwargs: bool):
+    download_file_pool = get_thread_pool("download")
+
+    def download(uuid: UUID, *args, **kwargs):
         if not exists(path) or kwargs.get("force", False) is True:
             mkdir_from_file(path)
             response = get(url, allow_redirects=True)
             if response.status_code >= 500:
-                current_app.logger.error("Error downloading %s\n" % url)
+                error("Error downloading %s" % url)
                 return
 
             if response.status_code >= 400:
-                current_app.logger.error("Can't downloading %s\n" % url)
+                error("Can't downloading %s" % url)
                 return
 
             with open(path, "wb") as handler:
@@ -198,7 +207,9 @@ def download_file(url: str, path: str, **kwargs: bool) -> ThreadPool:
 
     download_file_pool.add_task(download)
 
-    return download_file_pool
+
+def wait_for_all_downloads() -> None:
+    join_thread_pool("download")
 
 
 def clamp(value: int | float, min_value: int | float, max_value: int | float) -> int | float:
@@ -305,3 +316,11 @@ def add_upgrade_materials(materials: dict[str, int], upgrade: dict[str, int], ti
 
 def getenv_bool(key: str) -> bool:
     return True if getenv(key) in ["True", "true", "t", "1"] else False
+
+
+def from_b64(text: str) -> str:
+    return urlsafe_b64decode(text).decode("utf-8")
+
+
+def to_b64(text: str) -> str:
+    return urlsafe_b64encode(text.encode("utf-8")).decode("utf-8")

@@ -1,8 +1,8 @@
 from atexit import register
 from typing import Callable, Any, Optional
-from queue import Queue, Empty
-from threading import Thread, Timer
-from multiprocessing import Value
+from queue import Empty
+from threading import Timer
+from multiprocessing import Process, Queue, Value
 from time import sleep
 from uuid import uuid4, UUID
 
@@ -48,14 +48,14 @@ def del_pool(name: str):
     del pool
 
 
-class Worker(Thread):
+class Worker(Process):
     daemon: bool = True
     _TIMEOUT: float = 0.1
 
     def __init__(
         self, _task_done: Value, tasks: Queue, returns: Optional[Queue] = None, errors: Optional[Queue] = None
     ):
-        Thread.__init__(self)
+        Process.__init__(self)
 
         self._task_done: Value = _task_done
         self._exit: Value = Value("b", False)
@@ -141,12 +141,7 @@ class Pool:
         self._workers.append(Worker(self._task_done, self._tasks, self._returns, self._errors))
 
     def add_task(
-        self,
-        func: TaskCallable,
-        callback: TaskCallback = None,
-        errorCallback: TaskErrorCallback = None,
-        *args,
-        **kwargs,
+        self, func: TaskCallable, callback: TaskCallback, errorCallback: TaskErrorCallback, *args, **kwargs
     ) -> UUID:
         uid = uuid4()
         self._add_task(uid, func, callback, errorCallback, args, kwargs)

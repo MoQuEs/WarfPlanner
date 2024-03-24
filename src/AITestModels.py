@@ -21,14 +21,14 @@ def parse_result(directory: str, result) -> callable:
 
     result_boxes = result.boxes.cpu().numpy()
     for index, xyxy in enumerate(result_boxes.xyxy):
-        class_index = int(result_boxes.cls[index])
+        class_index = int(result_boxes.names[index])
         class_name = result.names[class_index]
 
         overlap = False
         current_xyxy = XYXY(int(xyxy[0]), int(xyxy[1]), int(xyxy[2]), int(xyxy[3]))
         for box in boxes:
             if box.xyxy.check_overlap_with_margin(current_xyxy):
-                box.add_class(class_name)
+                box.add_name(class_name)
                 overlap = True
                 break
 
