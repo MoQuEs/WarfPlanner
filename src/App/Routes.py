@@ -1,8 +1,12 @@
 import re
 from http import HTTPStatus
+from pprint import pprint
 from typing import NamedTuple, TypeAlias
 from flask import Blueprint, redirect, Response, request, send_file
+from itertools import combinations
 
+from .OCR import from_image
+from .ADB import get_devices_with_ak, screenshot
 from .ArknightsData import arknights_data_generator
 from .Init import arknights, save, template, reload_init, config
 from .Logger import info
@@ -16,9 +20,11 @@ from .Types import (
 )
 
 main_routes_blueprint: Blueprint = Blueprint("main", "main")
-
-
 MaterialsToUpgrade: TypeAlias = list[dict[str, dict[str, dict[str, Material | int]]]]
+
+recruitment_selected_tags: set[int] = set()
+recruitment_lang: str = config.language()
+recruitment_app_type: str = config.arknights_client()
 
 
 class CharactersToUpgrade(NamedTuple):
@@ -283,7 +289,7 @@ def upgrades_edit_route(cid: str) -> str | Response:
 
     upgrade = save.upgrades[cid]
 
-    max_level_phases = arknights.upgrade_max_lv_phases.phases[character.rarity]
+    max_level_phases = arknights.upgrade_max_lv_phases.phases[character.rarity.rarity_id]
 
     upgrade.level.elite_from = clamp(int(request.form["elite_from"]), 0, len(max_level_phases) - 1)
     upgrade.level.elite_to = clamp(
@@ -370,6 +376,123 @@ def upgrades_delete_route(cid: str) -> str | Response:
 @main_routes_blueprint.get("/recruitment")
 def recruitment_route() -> str | Response:
     info("Showing recruitment")
+
+    return template("recruitment", selected_tags=recruitment_selected_tags, recruitment_lang=recruitment_lang)
+
+
+@main_routes_blueprint.delete("/recruitment")
+def recruitment_clear_route() -> str | Response:
+    info("Deleting recruitment")
+
+    recruitment_selected_tags.clear()
+    return recruitment_route()
+
+
+@main_routes_blueprint.post("/recruitment/lang")
+def recruitment_set_lang_route() -> str | Response:
+    info("Updating recruitment")
+
+    pprint(request.form)
+
+    return recruitment_route()
+
+
+@main_routes_blueprint.post("/recruitment/<tig>")
+def recruitment_add_tag_route(tig: str) -> str | Response:
+    info("Updating recruitment")
+
+    tig = int(tig)
+
+    if tig in recruitment_selected_tags:
+        recruitment_selected_tags.remove(tig)
+        return recruitment_route()
+
+    if len(recruitment_selected_tags) >= 5:
+        return Response(status=HTTPStatus.NOT_ACCEPTABLE)
+
+    recruitment_selected_tags.add(tig)
+
+    return recruitment_route()
+
+
+def get_tags_from_adb():
+    ret = []
+    for device in get_devices_with_ak():
+        result = from_image(screenshot(device.device), [device.ocr_language])
+
+        tags: set[int] = set()
+        tags_with_cords: dict[int, list[Character]] = {}
+        for cords, tag, confidence in result:
+            lang_tags = arknights.recruitment.tags[device.app_language]
+            if tag in lang_tags:
+                tid = lang_tags[tag]
+                tags.add(tid)
+
+                chars = []
+                for cid, character in arknights.characters.items():
+                    if (device.is_cn and character.recruitment.in_cn) or (
+                        device.is_global and character.recruitment.in_global
+                    ):
+                        if tid in character.recruitment.tags:
+                            chars.append(character)
+
+                tags_with_cords[tid] = chars
+
+        ret.append((tags, tags_with_cords))
+
+
+def characters_by_tags(tags: set[int], app_type: str) -> dict[int, list[Character]]:
+    chars = {}
+    for tid in tags:
+        chars[tid] = []
+        for cid, character in arknights.characters.items():
+            if (device.is_cn and character.recruitment.in_cn) or (device.is_global and character.recruitment.in_global):
+                if tid in character.recruitment.tags:
+                    chars.append(character)
+
+    return chars
+
+
+@main_routes_blueprint.get("/recruitment/from_adb")
+def recruitment_from_adb_route() -> str | Response:
+    for tags, tags_with_cords in get_tags_from_adb():
+        comps_chars: dict[tuple, tuple[int, list[Character]]] = {}
+        for combs_tags in list(combinations(tags, 1)) + list(combinations(tags, 2)) + list(combinations(tags, 3)):
+
+            lowest_rarity = 6
+            chars: list[Character] = []
+
+            for tag in combs_tags:
+                if len(chars) == 0:
+                    chars.extend([char for char in tags_with_cords[tag]])
+                    continue
+
+                tmp = []
+                for char in tags_with_cords[tag]:
+                    for c in chars:
+                        if char.id == c.id:
+                            tmp.append(char)
+
+                chars = tmp
+
+            if len(chars) == 0:
+                continue
+
+            for char in chars:
+                if char.rarity.rarity_display < lowest_rarity:
+                    lowest_rarity = char.rarity.rarity_display
+
+            comps_chars[combs_tags] = (lowest_rarity, chars)
+
+        def custom_sort_function(element: tuple[tuple, tuple[int, list[Character]]]):
+            return element[1][0]
+
+        # tuple(map(lambda x: arknights.recruitment.get_tag_with_lang_id(app_language, x), i))
+        comps_chars: list[tuple[tuple, tuple[int, list[Character]]]] = sorted(
+            [(i, c) for i, c in comps_chars.items()],
+            key=custom_sort_function,
+            reverse=True,
+        )
 
     return template("recruitment")
 

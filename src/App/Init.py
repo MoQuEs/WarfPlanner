@@ -92,6 +92,8 @@ environment.globals.update(template=template)
 environment.globals.update(pprint=pprint)
 environment.globals.update(len=len)
 environment.globals.update(abs=abs)
+environment.globals.update(list=list)
+environment.globals.update(set=set)
 
 listen_addr: str = "127.0.0.1"
 listen_port: int = get_free_port() if config.port() == 0 else config.port()

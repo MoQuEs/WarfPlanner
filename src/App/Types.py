@@ -1,6 +1,5 @@
 from abc import abstractmethod
-from base64 import b64encode, urlsafe_b64encode, b64decode, urlsafe_b64decode
-from dataclasses import dataclass, field, InitVar
+from dataclasses import dataclass, field
 from json import loads, dumps
 from os.path import exists
 from pprint import pprint
@@ -23,27 +22,44 @@ from .Utils import (
 )
 
 
+@dataclass
+class RarityData:
+    rarity_id: int = field(default=0)
+    rarity_display: int = field(default=0)
+    rarity_icon_id: str = field(default="")
+    rarity_name: str = field(default="")
+
+
+@dataclass
+class AKAppData:
+    repository: str = field(default="")
+    app_package: str = field(default="")
+    app_lang: str = field(default="")
+    ocr_lang: str = field(default="")
+    app_type: str = field(default="")
+
+
 class Rarity:
     @staticmethod
-    def all_as_tuple() -> list[tuple[int, str, str]]:
+    def all_as_tuple() -> list[RarityData]:
         return [
-            (0, "sprite_item_r1", "TIER_1"),
-            (1, "sprite_item_r2", "TIER_2"),
-            (2, "sprite_item_r3", "TIER_3"),
-            (3, "sprite_item_r4", "TIER_4"),
-            (4, "sprite_item_r5", "TIER_5"),
-            (5, "sprite_item_r6", "TIER_6"),
+            RarityData(0, 1, "sprite_item_r1", "TIER_1"),
+            RarityData(1, 2, "sprite_item_r2", "TIER_2"),
+            RarityData(2, 3, "sprite_item_r3", "TIER_3"),
+            RarityData(3, 4, "sprite_item_r4", "TIER_4"),
+            RarityData(4, 5, "sprite_item_r5", "TIER_5"),
+            RarityData(5, 6, "sprite_item_r6", "TIER_6"),
         ]
 
     @staticmethod
-    def from_game_data(rarity: str | int) -> tuple[int, str, str]:
-        for rarity_id, rarity_icon_id, rarity_name in Rarity.all_as_tuple():
+    def from_game_data(rarity: str | int) -> RarityData:
+        for r in Rarity.all_as_tuple():
             if (
-                rarity_icon_id == str(rarity)
-                or rarity_name == str(rarity)
-                or (isinstance(rarity, int) and rarity_id == rarity)
+                r.rarity_icon_id == str(rarity)
+                or r.rarity_name == str(rarity)
+                or (isinstance(rarity, int) and r.rarity_id == rarity)
             ):
-                return rarity_id, rarity_icon_id, rarity_name
+                return r
 
         raise Exception("Unknown rarity %s" % rarity)
 
@@ -166,26 +182,40 @@ class CharacterUpgrades:
 
 
 @dataclass
+class RecruitmentCharacter:
+    tags: set[int] = field(default_factory=set)
+    in_app_types: set[str] = field(default_factory=set)
+    in_cn: bool = field(default=False)
+    in_global: bool = field(default=False)
+
+    def set_tags(self, profession: int, position: int, tagList: list[int], rarity: int | None = None) -> None:
+        self.tags.add(profession)
+        self.tags.add(position)
+        self.tags.update(tagList)
+        if rarity is not None:
+            self.tags.add(rarity)
+
+
+@dataclass
 class Character:
     id: str = field(default="")
     gamepress_id: Union[int | None] = field(default=None)
     name: dict[str, str] = field(default_factory=dict)
-    rarity: int = field(default=1)
+    rarity: RarityData = field(default_factory=RarityData)
     elite: list[dict[str, int]] = field(default_factory=list)
     all_skil_lvlup: list[dict[str, int]] = field(default_factory=list)
     skills: dict[str, Skill] = field(default_factory=dict)
     modules: dict[str, Module] = field(default_factory=dict)
+    app_type: set[str] = field(default_factory=set)
 
-    cn_only: bool = field(default=True)
+    recruitment: RecruitmentCharacter = field(default_factory=RecruitmentCharacter)
 
     @staticmethod
     def from_game_data(lang_id: str, cid: str, value: dict) -> "Character":
         self = Character()
         self.id = cid
         self.name = {lang_id: value["name"]}
-        if "en_US" not in self.name:
-            self.name["en_US"] = value["appellation"]
-        (self.rarity, _, _) = Rarity.from_game_data(value["rarity"])
+        self.rarity = Rarity.from_game_data(value["rarity"])
 
         if value["phases"] is not None:
             for phase_data in value["phases"]:
@@ -244,8 +274,8 @@ class Character:
         all_exp = 0
 
         if upgrades.level.is_enabled():
-            elite_max_lvs = data.upgrade_max_lv_phases.phases[self.rarity]
-            elite_gold_costs = data.upgrade_gold_cost.phases[self.rarity]
+            elite_max_lvs = data.upgrade_max_lv_phases.phases[self.rarity.rarity_id]
+            elite_gold_costs = data.upgrade_gold_cost.phases[self.rarity.rarity_id]
 
             for elite, elite_upgrade in enumerate(self.elite):
                 if upgrades.level.elite_from < elite and upgrades.level.elite_from != upgrades.level.elite_to:
@@ -313,7 +343,7 @@ class Character:
 class Material:
     id: str = field(default="")
     name: dict[str, str] = field(default_factory=dict)
-    rarity: int = field(default=1)
+    rarity: RarityData = field(default_factory=RarityData)
     craft_from: Optional[dict[str, int]] = field(default=None)
 
     @staticmethod
@@ -321,7 +351,7 @@ class Material:
         self = Material()
         self.id = mid
         self.name = {lang_id: value["name"]}
-        (self.rarity, _, _) = Rarity.from_game_data(value["rarity"])
+        self.rarity = Rarity.from_game_data(value["rarity"])
         self.craft_from = craft_from
 
         return self
@@ -680,21 +710,8 @@ class ImportExport:
 
 
 @dataclass
-class RecruitmentCharacter:
-    tags: set[int] = field(default_factory=set)
-    in_cn: bool = field(default=True)
-    in_global: bool = field(default=True)
-
-    def set_tags(self, profession: int, position: int, tagList: list[int]) -> None:
-        self.tags.add(profession)
-        self.tags.add(position)
-        self.tags.update(tagList)
-
-
-@dataclass
 class Recruitment:
     tags: dict[str, dict[str, int]] = field(default_factory=dict)
-    characters: dict[str, RecruitmentCharacter] = field(default_factory=dict)
 
     def add_tag(self, lang_id: str, tag: str, tid: int) -> None:
         if lang_id not in self.tags:
@@ -713,24 +730,15 @@ class Recruitment:
         if lang_id in self.tags and tag in self.tags[lang_id]:
             return self.tags[lang_id][tag]
 
-        raise Exception("Unknown tag %s in lang %s" % (tag, lang_id))
+        return -1
 
-    def add_character(self, cid: str, in_cn: bool, in_global: bool) -> None:
-        if cid not in self.characters:
-            self.characters[cid] = RecruitmentCharacter()
+    def get_tag_with_lang_id(self, lang_id: str, tag: int) -> str:
+        if lang_id in self.tags:
+            for tag_name, tag_id in self.tags[lang_id].items():
+                if tag_id == tag:
+                    return tag_name
 
-        self.characters[cid].in_cn = in_cn
-        self.characters[cid].in_global = in_global
-
-    def set_tags_for_character(
-        self, lang_id: str, cid: str, profession: int, position: int, tagList: list[str]
-    ) -> None:
-        if cid not in self.characters:
-            return
-
-        self.characters[cid].set_tags(
-            profession, position, [self.search_tag_with_lang_id(lang_id, tag) for tag in tagList]
-        )
+        raise Exception("Unknown tag_id %s for lang %s" % (tag, lang_id))
 
 
 class SaveLoad:
@@ -766,17 +774,18 @@ class Arknights(SaveLoad):
 
     exp: dict[str, int] = field(default_factory=dict)
 
-    upgrade_max_lv_phases: UpgradeMaxLvPhases = field(default=UpgradeMaxLvPhases())
-    upgrade_gold_cost: UpgradeGoldCost = field(default=UpgradeGoldCost())
-    upgrade_exp_map: UpgradeExpMap = field(default=UpgradeExpMap())
-    upgrade_gold_map: UpgradeGoldMap = field(default=UpgradeGoldMap())
+    upgrade_max_lv_phases: UpgradeMaxLvPhases = field(default_factory=UpgradeMaxLvPhases)
+    upgrade_gold_cost: UpgradeGoldCost = field(default_factory=UpgradeGoldCost)
+    upgrade_exp_map: UpgradeExpMap = field(default_factory=UpgradeExpMap)
+    upgrade_gold_map: UpgradeGoldMap = field(default_factory=UpgradeGoldMap)
 
     static_names: dict[str, str] = field(default_factory=dict)
     needs_additional_mats: dict[str, dict[str, int]] = field(default_factory=dict)
     display_materials: list[dict[str, list[str]]] = field(default_factory=list)
     display_recruitment: dict[str, list[int]] = field(default_factory=dict)
+    ak_app_data: list[AKAppData] = field(default_factory=list)
 
-    recruitment: Recruitment = field(default=Recruitment())
+    recruitment: Recruitment = field(default_factory=Recruitment)
 
     _save: "Save" = field(repr=False, init=False, default=None)
 
@@ -803,9 +812,6 @@ class Arknights(SaveLoad):
                 if lang not in self.characters[character_id].name:
                     self.characters[character_id].name[lang] = name
             self.characters[character_id].name[lang_id] = character.name[lang_id]
-
-        if lang_id != "zh_CN":
-            self.characters[character_id].cn_only = False
 
     def add_material(self, material_id: str, lang_id: str, material: Material) -> None:
         if material_id not in self.materials:
@@ -890,6 +896,16 @@ class Arknights(SaveLoad):
         self._save.save()
 
         return True
+
+    def get_app_type_by_lang_id(self, lang_id: str) -> str:
+        for app_data in self.ak_app_data:
+            if app_data.app_lang == lang_id:
+                return app_data.app_type
+
+        return self.ak_app_data[0].app_type
+
+    def get_app_types(self) -> set[str]:
+        return set([app_data.app_type for app_data in self.ak_app_data])
 
 
 @dataclass

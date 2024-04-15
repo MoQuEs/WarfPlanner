@@ -1,25 +1,102 @@
 <div class="flex flex-col gap-4 recruitment">
-    <div class="grid grid-cols-1 gap-4 pl-16 md:pl-0">
+    <div class="grid grid-cols-2 gap-4 pl-16 md:pl-0">
         {% if is_dev %}
-        <button type="button" class="flex grow btn btn-light" onclick="load_import_export()">
+        <button type="button" class="flex grow btn btn-light" onclick="load_recruitment()">
             <i class="bi bi-arrow-down-up pr-1"></i>
-            {{ i18t('button.load_import_export') }}
+            {{ i18t('button.load_recruitment') }}
         </button>
         {% endif %}
     </div>
 
     <div class="flex flex-col flex-wrap card-smp">
-        <p>{{ i18t(group_name) }}</p>
-        <div class="flex flex-row flex-wrap place-content-around gap-2">
-            {% for material_name, material in group.items() %}
-            {{ template(
-                'material',
-                material=material.material,
-                have=material.have,
-                need=material.need,
-                show_input=True
-            )|safe}}
+        <form action="" class="flex flex-col flex-wrap">
+            <div class="flex flex-row flex-wrap card-smp">
+                {{ template(
+                'components/select',
+                select_id='language_recruitment',
+                select_name='language',
+                selected=language if language else config.language(),
+                options=[(data.app_lang, i18t('settings.settings.language-%s' % data.app_lang)) for data in arknights.ak_app_data],
+                props={
+                    'hx-post': '/recruitment/language',
+                    'hx-target': '#recruitment',
+                    'hx-swap': 'outerHTML',
+                }
+                )|safe }}
+
+                {{ template(
+                'components/select',
+                select_id='client_recruitment',
+                select_name='client',
+                selected=arknights_client if arknights_client else config.arknights_client(),
+                options=[(data.app_lang, i18t('settings.settings.arknights_client-%s' % data.app_lang)) for data in arknights.ak_app_data],
+                props={
+                    'hx-post': '/recruitment/client',
+                    'hx-target': '#recruitment',
+                    'hx-swap': 'outerHTML',
+                }
+                )|safe }}
+
+                <button type="submit" class="flex grow btn btn-primary">
+                    <i class="bi bi-phone pr-1"></i>
+                    {{ i18t('button.recruitment_adb') }}
+                </button>
+            </div>
+            <table class="table-auto">
+                <tbody>
+                {% for group_name, group in arknights.display_recruitment.items() %}
+                <tr class="">
+                    <td class="px-4 py-2">{{ i18t(group_name) }}:</td>
+                    <td class="flex flex-row flex-wrap gap-2 px-4 py-2">
+                        {% for tid in group %}
+                        <button type="submit"
+                                class="btn {% if tid in selected_tags %}btn-primary{% else %}btn-light{% endif %} cursor-pointer"
+                                hx-post="/recruitment/tag/{{ tid }}"
+                                hx-target="#recruitment"
+                                hx-swap="outerHTML"
+                        >
+                            {{ arknights.recruitment.get_tag_with_lang_id(config.arknights_client(), tid) }}
+                        </button>
+                        {% endfor %}
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </form>
+
+        {% if len(recognized) > 0 %}
+        {{ template('components/hr')|safe }}
+
+        <table class="table-auto">
+            <tbody>
+            {% for tags, data in recognized %}
+            <tr class="">
+                <td class="px-4 py-2 w-0 min-w-0">
+                    {% for tag_id in tags %}
+                    <span>
+                        {{ arknights.recruitment.get_tag_with_lang_id(config.arknights_client(), tag_id) }}
+                    </span>
+                    <br>
+                    {% endfor %}
+                    <span>
+                        RARITY:&nbsp;{{ data[0] }}
+                    </span>
+                </td>
+                <td class="gap-2 px-4 py-2">
+                    {% for character in data[1] %}
+                    <img src="/static/images/avatars/{{ character.id }}.png"
+                         title="{{ character.get_name(config.arknights_client()) }}"
+                         alt="{{ character.get_name(config.arknights_client()) }}"
+                         class="h-auto w-auto min-w-8 max-w-16"
+                         loading="lazy"
+                    />
+                    {% endfor %}
+                </td>
+            </tr>
             {% endfor %}
-        </div>
+            </tbody>
+        </table>
+        {% endif %}
     </div>
 </div>

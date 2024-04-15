@@ -21,6 +21,8 @@
         "add_character": "Add character",
         "show_cn_only_characters": "Show CN only characters",
         "load_settings": "Load settings",
+        "load_recruitment": "Load recruitment",
+        "recruitment_adb": "From device",
         "load_import_export": "Load import/export",
         "load_about": "Load about",
         "craft": "Craft"

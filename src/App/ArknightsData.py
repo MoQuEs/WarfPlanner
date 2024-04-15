@@ -18,6 +18,7 @@ from .Types import (
     Character,
     Upgrade,
     Recruitment,
+    AKAppData,
 )
 
 from .Utils import (
@@ -39,11 +40,11 @@ def arknights_data_generator(config: Config, arknights: Arknights, save: bool = 
     yuanyan3060_arknightsgameresource = "https://raw.githubusercontent.com/yuanyan3060/ArknightsGameResource/main/%s"
     aceship_arknight_images = "https://raw.githubusercontent.com/Aceship/Arknight-Images/%s"
 
-    for repository, lang in [
-        ("ArknightsGameData", "zh_CN"),
-        ("ArknightsGameData_YoStar", "en_US"),
-        ("ArknightsGameData_YoStar", "ja_JP"),
-        ("ArknightsGameData_YoStar", "ko_KR"),
+    for repository, app_package, app_lang, ocr_lang, app_type in [
+        ("ArknightsGameData", "com.hypergryph.arknights", "zh_CN", "ch_sim", "chinese"),
+        ("ArknightsGameData_YoStar", "com.YoStarEN.Arknights", "en_US", "en", "global"),
+        ("ArknightsGameData_YoStar", "com.YoStarJP.Arknights", "ja_JP", "ja", "global"),
+        ("ArknightsGameData_YoStar", "com.YoStarKR.Arknights", "ko_KR", "ko", "global"),
     ]:
         for file in [
             # Guard Amiya
@@ -64,10 +65,13 @@ def arknights_data_generator(config: Config, arknights: Arknights, save: bool = 
             "gacha_table.json",
         ]:
             download_file(
-                "https://raw.githubusercontent.com/Kengxxiao/%s/master/%s/gamedata/excel/%s" % (repository, lang, file),
-                ak_json_dir(lang, file),
+                "https://raw.githubusercontent.com/Kengxxiao/%s/master/%s/gamedata/excel/%s"
+                % (repository, app_lang, file),
+                ak_json_dir(app_lang, file),
                 force=config.force_download_data(),
             )
+
+        arknights.ak_app_data.append(AKAppData(repository, app_package, app_lang, ocr_lang, app_type))
 
     download_file(
         "https://gamepress.gg/arknights/sites/arknights/files/json/operator_json.json",
@@ -228,6 +232,11 @@ def arknights_data_generator(config: Config, arknights: Arknights, save: bool = 
         "MELEE": 9,
         "RANGED": 10,
     }
+    rarity_recruitment_tags = {
+        1: 17,
+        4: 14,
+        5: 11,
+    }
     for path in glob(join(excel_glob_path, "gacha_table.json")):
         langId = match(r".*[\\\/]+([^\\\/]+)[\\\/]+gacha_table.*", path).group(1)
 
@@ -235,16 +244,15 @@ def arknights_data_generator(config: Config, arknights: Arknights, save: bool = 
 
         full_json = get_json_file_content(path)
         for value in full_json["gachaTags"]:
-            arknights.recruitment.add_tag(langId, value["tagName"], value["tagId"])
-            pass
+            arknights.recruitment.add_tag(arknights.get_app_type_by_lang_id(langId), value["tagName"], value["tagId"])
 
+    recruitment_operator_data: dict[str, set[str]] = {}
     for operator in get_json_file_content(ak_json_dir("aceship", "tl-akhr.json")):
-        cid = operator["id"]
-        hidden = operator["hidden"] if "hidden" in operator else True
-        globalHidden = operator["globalHidden"] if "globalHidden" in operator else True
-
-        if not hidden or not globalHidden:
-            arknights.recruitment.add_character(cid, not hidden, not globalHidden)
+        recruitment_operator_data[operator["id"]] = {"chinese", "global"}
+        if "hidden" in operator and operator["hidden"]:
+            recruitment_operator_data[operator["id"]].discard("chinese")
+        if "globalHidden" in operator and operator["globalHidden"]:
+            recruitment_operator_data[operator["id"]].discard("global")
 
     # Characters
     for json in ["character_table.json", "char_patch_table.json"]:
@@ -263,20 +271,32 @@ def arknights_data_generator(config: Config, arknights: Arknights, save: bool = 
                 ):
                     continue
 
-                if key in arknights.recruitment.characters:
-                    arknights.recruitment.set_tags_for_character(
-                        langId,
-                        key,
-                        static_recruitment_tags[value["profession"]],
-                        static_recruitment_tags[value["position"]],
-                        value["tagList"],
-                    )
-
                 character = Character.from_game_data(langId, key, value)
+
+                character.app_type.add(arknights.get_app_type_by_lang_id(langId))
+                if "" in character.app_type:
+                    character.app_type.discard("")
+
                 if character.get_name(langId) in gamepress_operator_data:
                     character.gamepress_id = gamepress_operator_data[character.get_name(langId)]
 
+                if key in recruitment_operator_data:
+                    character.recruitment.in_app_types = recruitment_operator_data[key]
+
+                rarity_tag = None
+                if character.rarity.rarity_id in rarity_recruitment_tags:
+                    rarity_tag = rarity_recruitment_tags[character.rarity.rarity_id]
+
+                character.recruitment.set_tags(
+                    static_recruitment_tags[value["profession"]],
+                    static_recruitment_tags[value["position"]],
+                    [arknights.recruitment.search_tag_with_lang_id(langId, tag) for tag in value["tagList"]],
+                    rarity_tag,
+                )
+
                 arknights.add_character(key, langId, character)
+                if "en_US" not in character.name:
+                    character.name["en_US"] = value["appellation"]
 
                 download_file(
                     yuanyan3060_arknightsgameresource % "avatar/%s.png" % key,

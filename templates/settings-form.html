@@ -6,16 +6,16 @@
             'components/number_input',
             input_id='scale',
             input_name='scale',
-            input_min="50",
-            input_max="1000",
+            input_min=50,
+            input_max=1000,
             input_value=config.scale(),
             label=i18t('settings.settings.scale'),
             tooltip=i18t('settings.settings.scale-tooltip'),
             props={
-                'hx-post': "/settings",
-                'hx-trigger': "change",
-                'hx-target': "closest .settings",
-                'hx-swap': "outerHTML",
+                'hx-post': '/settings',
+                'hx-trigger': 'change',
+                'hx-target': 'closest .settings',
+                'hx-swap': 'outerHTML',
             }
             )|safe }}
             {{ template(
@@ -30,11 +30,11 @@
             label=i18t('settings.settings.theme'),
             tooltip=i18t('settings.settings.theme-tooltip'),
             props={
-                'hx-post': "/settings",
-                'hx-trigger': "change",
-                'hx-target': "closest .settings",
-                'hx-swap': "outerHTML",
-                'onchange': "change_theme()",
+                'hx-post': '/settings',
+                'hx-trigger': 'change',
+                'hx-target': 'closest .settings',
+                'hx-swap': 'outerHTML',
+                'onchange': 'change_theme()',
             }
             )|safe }}
             {{ template(
@@ -42,16 +42,14 @@
             select_id='language',
             select_name='language',
             selected=config.language(),
-            options=[
-                ('en_US', i18t('settings.settings.language-en_US')),
-            ],
+            options=[(data.app_lang, i18t('settings.settings.language-%s' % data.app_lang)) for data in arknights.ak_app_data],
             label=i18t('settings.settings.language'),
             tooltip=i18t('settings.settings.language-tooltip'),
             props={
-                'hx-post': "/settings",
-                'hx-trigger': "change",
-                'hx-target': "closest .settings",
-                'hx-swap': "outerHTML",
+                'hx-post': '/settings',
+                'hx-trigger': 'change',
+                'hx-target': 'closest .settings',
+                'hx-swap': 'outerHTML',
             }
             )|safe }}
             {{ template(
@@ -59,16 +57,14 @@
             select_id='arknights_client',
             select_name='arknights_client',
             selected=config.arknights_client(),
-            options=[
-                ('en_US', i18t('settings.settings.arknights_client-en_US')),
-            ],
+            options=[(data.app_lang, i18t('settings.settings.arknights_client-%s' % data.app_lang)) for data in arknights.ak_app_data],
             label=i18t('settings.settings.arknights_client'),
             tooltip=i18t('settings.settings.arknights_client-tooltip'),
             props={
-                'hx-post': "/settings",
-                'hx-trigger': "change",
-                'hx-target': "closest .settings",
-                'hx-swap': "outerHTML",
+                'hx-post': '/settings',
+                'hx-trigger': 'change',
+                'hx-target': 'closest .settings',
+                'hx-swap': 'outerHTML',
             }
             )|safe }}
         </div>
@@ -78,16 +74,16 @@
             'components/number_input',
             input_id='port',
             input_name='port',
-            input_min="0",
-            input_max="65535",
+            input_min=0,
+            input_max=65535,
             input_value=config.port(),
             label=i18t('settings.app.port'),
             tooltip=i18t('settings.app.port-tooltip'),
             props={
-                'hx-post': "/settings",
-                'hx-trigger': "change",
-                'hx-target': "closest .settings",
-                'hx-swap': "outerHTML",
+                'hx-post': '/settings',
+                'hx-trigger': 'change',
+                'hx-target': 'closest .settings',
+                'hx-swap': 'outerHTML',
             }
             )|safe }}
             {{ template(
@@ -102,10 +98,10 @@
             label=i18t('settings.app.environment'),
             tooltip=i18t('settings.app.environment-tooltip'),
             props={
-                'hx-post': "/settings",
-                'hx-trigger': "change",
-                'hx-target': "closest .settings",
-                'hx-swap': "outerHTML",
+                'hx-post': '/settings',
+                'hx-trigger': 'change',
+                'hx-target': 'closest .settings',
+                'hx-swap': 'outerHTML',
             }
             )|safe }}
             {{ template(
@@ -120,10 +116,10 @@
             label=i18t('settings.app.server'),
             tooltip=i18t('settings.app.server-tooltip'),
             props={
-                'hx-post': "/settings",
-                'hx-trigger': "change",
-                'hx-target': "closest .settings",
-                'hx-swap': "outerHTML",
+                'hx-post': '/settings',
+                'hx-trigger': 'change',
+                'hx-target': 'closest .settings',
+                'hx-swap': 'outerHTML',
             }
             )|safe }}
             {{ template(
@@ -138,10 +134,10 @@
             label=i18t('settings.app.mode'),
             tooltip=i18t('settings.app.mode-tooltip'),
             props={
-                'hx-post': "/settings",
-                'hx-trigger': "change",
-                'hx-target': "closest .settings",
-                'hx-swap': "outerHTML",
+                'hx-post': '/settings',
+                'hx-trigger': 'change',
+                'hx-target': 'closest .settings',
+                'hx-swap': 'outerHTML',
             }
             )|safe }}
         </div>
@@ -156,10 +152,10 @@
             label=i18t('settings.arknights.force_download_data'),
             tooltip=i18t('settings.arknights.force_download_data-tooltip'),
             props={
-                'hx-post': "/settings",
-                'hx-trigger': "change",
-                'hx-target': "closest .settings",
-                'hx-swap': "outerHTML",
+                'hx-post': '/settings',
+                'hx-trigger': 'change',
+                'hx-target': 'closest .settings',
+                'hx-swap': 'outerHTML',
             }
             )|safe }}
             {{ template(
@@ -171,10 +167,10 @@
             label=i18t('settings.arknights.force_download_images'),
             tooltip=i18t('settings.arknights.force_download_images-tooltip'),
             props={
-                'hx-post': "/settings",
-                'hx-trigger': "change",
-                'hx-target': "closest .settings",
-                'hx-swap': "outerHTML",
+                'hx-post': '/settings',
+                'hx-trigger': 'change',
+                'hx-target': 'closest .settings',
+                'hx-swap': 'outerHTML',
             }
             )|safe }}
         </div>

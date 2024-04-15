@@ -59,6 +59,10 @@ function load_import_export() {
     document.getElementById('load_import_export').click();
 }
 
+function load_recruitment() {
+    document.getElementById('load_recruitment').click();
+}
+
 function load_settings() {
     document.getElementById('load_settings').click();
 }
